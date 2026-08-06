@@ -1,0 +1,14 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "Feuille de Temps",
+  "orientation": "any",
+  "scope": "/apk/",
+  "short_name": "Heures",
+  "start_url": "/apk/",
+  "theme_color": "#ffffff",
+  "id": "/apk/",
+  "description": "Application de gestion des heures de travail et des déplacements.",
+  "lang": "fr"
+}
