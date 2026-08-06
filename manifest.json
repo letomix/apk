@@ -1,14 +1,15 @@
 {
-  "background_color": "#ffffff",
-  "dir": "ltr",
+  "name": "Pedro - Feuille de Temps & Déplacements",
+  "short_name": "Chronos",
+  "start_url": "./index.html",
   "display": "standalone",
-  "name": "Feuille de Temps",
-  "orientation": "any",
-  "scope": "/apk/",
-  "short_name": "Heures",
-  "start_url": "/apk/",
-  "theme_color": "#ffffff",
-  "id": "/apk/",
-  "description": "Application de gestion des heures de travail et des déplacements.",
-  "lang": "fr"
+  "background_color": "#0b0f19",
+  "theme_color": "#06b6d4",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
