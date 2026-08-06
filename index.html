@@ -7,7 +7,7 @@
   <title>Pedro - Feuille de Temps & Déplacements</title>
   
   <!-- Material & Futuristic Styling -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -77,6 +77,19 @@
 
   <script>
     console.log("Chronos App Standalone ready.");
+
+    // Registo do Service Worker para validação completa PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => {
+            console.log('Service Worker registado com sucesso:', reg.scope);
+          })
+          .catch(err => {
+            console.log('Falha ao registar o Service Worker:', err);
+          });
+      });
+    }
   </script>
 </body>
 </html>
