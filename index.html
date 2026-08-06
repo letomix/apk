@@ -1,95 +1,292 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <link rel="manifest" href="/apk/manifest.json">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Pedro - Feuille de Temps & Déplacements</title>
-  
-  <!-- Material & Futuristic Styling -->
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-
-  <style>
-    :root {
-      --bg-dark: #0b0f19;
-      --card-dark: rgba(18, 24, 38, 0.85);
-      --accent-cyan: #06b6d4;
-      --accent-blue: #3b82f6;
-      --accent-purple: #8b5cf6;
-    }
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background-color: var(--bg-dark);
-      color: #f1f5f9;
-      background-image: 
-        radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.12) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.12) 0px, transparent 50%);
-      background-attachment: fixed;
-      min-height: 100vh;
-    }
-    .glass-panel {
-      background: rgba(15, 23, 42, 0.75);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
-    }
-    .glow-cyan {
-      box-shadow: 0 0 20px -5px rgba(6, 182, 212, 0.4);
-    }
-    .font-mono {
-      font-family: 'JetBrains Mono', monospace;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronos - Feuille de Temps & Déplacements</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { background-color: #0b0f19; color: #f3f4f6; font-family: system-ui, -apple-system, sans-serif; }
+    </style>
 </head>
-<body class="p-3 md:p-6 pb-24">
-  <div id="app" class="max-w-6xl mx-auto space-y-6">
-    <!-- Header -->
-    <header class="glass-panel rounded-2xl p-4 flex justify-between items-center relative z-50">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center glow-cyan font-bold text-lg text-white">
-          ⏱️
-        </div>
-        <div>
-          <h1 class="text-lg md:text-xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 via-teal-300 to-blue-500 bg-clip-text text-transparent">
-            Chronos
-          </h1>
-          <p class="text-xs text-slate-400">Feuille de Temps & Déplacements</p>
-        </div>
-      </div>
-      <div class="flex items-center space-x-2">
-        <button id="menu-btn" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
-          ⋮
-        </button>
-      </div>
-    </header>
+<body class="min-h-screen flex flex-col">
+    <div id="root" class="flex-1 flex flex-col"></div>
 
-    <div class="text-center p-8 glass-panel rounded-2xl">
-      <h2 class="text-2xl font-bold text-cyan-400 mb-2">Application Autonome Chronos</h2>
-      <p class="text-slate-300 max-w-lg mx-auto mb-4">
-        Cette version HTML autonome s'exécute directement sur tout navigateur Web ou WebView Android avec support IndexedDB et File System Access API.
-      </p>
-      <p class="text-xs text-slate-500">Intégration complète prêtes avec export PDF fr-FR.</p>
-    </div>
-  </div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
 
-  <script>
-    console.log("Chronos App Standalone ready.");
+        function App() {
+            const [records, setRecords] = useState([]);
+            const [modalOpen, setModalOpen] = useState(false);
+            
+            // Filtro por Mês (Formato YYYY-MM) por defeito o mês atual
+            const currentMonthDefault = new Date().toISOString().slice(0, 7);
+            const [selectedMonth, setSelectedMonth] = useState(currentMonthDefault);
+            const [filterType, setFilterType] = useState('Tous');
 
-    // Registo do Service Worker para validação completa PWA
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(reg => {
-            console.log('Service Worker registado com sucesso:', reg.scope);
-          })
-          .catch(err => {
-            console.log('Falha ao registar o Service Worker:', err);
-          });
-      });
-    }
-  </script>
+            // Formulário
+            const [form, setForm] = useState({
+                type: 'Déplacement',
+                date: new Date().toISOString().split('T')[0],
+                client: '',
+                location: '',
+                hours: '',
+                overtime: '0',
+                notes: ''
+            });
+
+            useEffect(() => {
+                const saved = localStorage.getItem('chronos_records_pro');
+                if (saved) {
+                    try { setRecords(JSON.parse(saved)); } catch(e) {}
+                }
+            }, []);
+
+            const saveRecord = (e) => {
+                e.preventDefault();
+                if (!form.client || !form.hours) return;
+                const newRecords = [ { id: Date.now(), ...form }, ...records ];
+                setRecords(newRecords);
+                localStorage.setItem('chronos_records_pro', JSON.stringify(newRecords));
+                setForm({
+                    type: 'Déplacement',
+                    date: new Date().toISOString().split('T')[0],
+                    client: '',
+                    location: '',
+                    hours: '',
+                    overtime: '0',
+                    notes: ''
+                });
+                setModalOpen(false);
+            };
+
+            const deleteRecord = (id) => {
+                const newRecords = records.filter(r => r.id !== id);
+                setRecords(newRecords);
+                localStorage.setItem('chronos_records_pro', JSON.stringify(newRecords));
+            };
+
+            // Filtrar por Mês e por Tipo
+            const filteredRecords = records.filter(r => {
+                const recordMonth = r.date ? r.date.slice(0, 7) : '';
+                const matchesMonth = recordMonth === selectedMonth;
+                const matchesType = filterType === 'Tous' || r.type === filterType;
+                return matchesMonth && matchesType;
+            });
+
+            // Totais do mês selecionado
+            const totalHours = filteredRecords.reduce((acc, curr) => acc + (parseFloat(curr.hours) || 0), 0);
+            const totalOvertime = filteredRecords.reduce((acc, curr) => acc + (parseFloat(curr.overtime) || 0), 0);
+
+            return (
+                <div className="flex-1 flex flex-col max-w-4xl w-full mx-auto p-4 md:p-6">
+                    {/* Header */}
+                    <header className="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900/80 backdrop-blur border border-slate-800 rounded-2xl p-6 mb-6 shadow-xl gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-cyan-500/10 p-3 rounded-xl border border-cyan-500/20 text-cyan-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            </div>
+                            <div>
+                                <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                                    Chronos <span className="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-500/30">PRO</span>
+                                </h1>
+                                <p className="text-slate-400 text-sm">Formations & Déplacements</p>
+                            </div>
+                        </div>
+                        <button 
+                            onClick={() => setModalOpen(true)}
+                            className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-medium px-5 py-2.5 rounded-xl shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-2 cursor-pointer w-full md:w-auto justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Ajouter Entrée
+                        </button>
+                    </header>
+
+                    {/* Barra de Controlo / Filtro por Mês */}
+                    <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div className="flex items-center gap-3 w-full md:w-auto">
+                            <label className="text-sm font-medium text-slate-300">Mois :</label>
+                            <input 
+                                type="month" 
+                                value={selectedMonth} 
+                                onChange={e => setSelectedMonth(e.target.value)}
+                                className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500" 
+                            />
+                        </div>
+
+                        {/* Totais do Mês */}
+                        <div className="flex gap-4 text-sm w-full md:w-auto justify-end">
+                            <div className="bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
+                                <span className="text-slate-400 text-xs block">Normales</span>
+                                <span className="text-cyan-400 font-bold">{totalHours} h</span>
+                            </div>
+                            <div className="bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
+                                <span className="text-slate-400 text-xs block">Heures Sup.</span>
+                                <span className="text-amber-400 font-bold">{totalOvertime} h</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Filtros por Tipo */}
+                    <div className="flex gap-2 overflow-x-auto pb-2 mb-6">
+                        {['Tous', 'Déplacement', 'Formation'].map(tab => (
+                            <button
+                                key={tab}
+                                onClick={() => setFilterType(tab)}
+                                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap cursor-pointer border ${filterType === tab ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow' : 'bg-slate-900/40 text-slate-400 border-slate-800 hover:bg-slate-800'}`}>
+                                {tab}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Lista de Registos */}
+                    <div className="flex-1 space-y-3">
+                        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                            Enregistrements pour {selectedMonth} ({filteredRecords.length})
+                        </h2>
+
+                        {filteredRecords.length === 0 ? (
+                            <div className="text-center py-16 bg-slate-900/40 border border-slate-800 rounded-2xl">
+                                <p className="text-slate-500">Aucun enregistrement trouvé pour ce mois.</p>
+                                <p className="text-xs text-slate-600 mt-1">Modifiez le mois ou ajoutez une nouvelle entrée.</p>
+                            </div>
+                        ) : (
+                            filteredRecords.map(item => (
+                                <div key={item.id} className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:border-slate-700 transition-all">
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-md border ${item.type === 'Formation' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'}`}>
+                                                {item.type}
+                                            </span>
+                                            <span className="text-sm text-slate-400">{item.date}</span>
+                                            {item.location && <span className="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded-md">📍 {item.location}</span>}
+                                        </div>
+                                        <h3 className="text-white font-semibold text-lg">{item.client}</h3>
+                                        {item.notes && <p className="text-slate-500 text-xs mt-1 italic">{item.notes}</p>}
+                                    </div>
+                                    <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+                                        <div className="text-right flex gap-3">
+                                            <div className="bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+                                                <span className="text-[10px] text-slate-500 block">Normale</span>
+                                                <span className="text-cyan-400 font-bold">{item.hours} h</span>
+                                            </div>
+                                            {parseFloat(item.overtime) > 0 && (
+                                                <div className="bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+                                                    <span className="text-[10px] text-slate-500 block">Sup.</span>
+                                                    <span className="text-amber-400 font-bold">+{item.overtime} h</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <button 
+                                            onClick={() => deleteRecord(item.id)}
+                                            className="text-slate-500 hover:text-red-400 p-2 transition-colors cursor-pointer" title="Supprimer">
+                                            ✕
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    {/* Modal para Adicionar */}
+                    {modalOpen && (
+                        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                            <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+                                <h3 className="text-xl font-bold text-white mb-4">Ajouter une Entrée</h3>
+                                <form onSubmit={saveRecord} className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 mb-1">Type d'activité</label>
+                                        <select 
+                                            value={form.type} 
+                                            onChange={e => setForm({...form, type: e.target.value})}
+                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500">
+                                            <option value="Déplacement">Déplacement</option>
+                                            <option value="Formation">Formation</option>
+                                        </select>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-400 mb-1">Date</label>
+                                            <input 
+                                                type="date" 
+                                                value={form.date} 
+                                                onChange={e => setForm({...form, date: e.target.value})}
+                                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-400 mb-1">Ville / Lieu</label>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Ex: Yffiniac" 
+                                                value={form.location} 
+                                                onChange={e => setForm({...form, location: e.target.value})}
+                                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-400 mb-1">Heures Normales</label>
+                                            <input 
+                                                type="number" 
+                                                step="0.5" 
+                                                placeholder="Ex: 7" 
+                                                value={form.hours} 
+                                                onChange={e => setForm({...form, hours: e.target.value})}
+                                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-400 mb-1">Heures Supplémentaires</label>
+                                            <input 
+                                                type="number" 
+                                                step="0.5" 
+                                                placeholder="Ex: 2" 
+                                                value={form.overtime} 
+                                                onChange={e => setForm({...form, overtime: e.target.value})}
+                                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 mb-1">Intitulé / Client / Sujet</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Ex: Client X ou Formation Logiciel" 
+                                            value={form.client} 
+                                            onChange={e => setForm({...form, client: e.target.value})}
+                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 mb-1">Notes / Remarques</label>
+                                        <textarea 
+                                            rows="2" 
+                                            placeholder="Détails supplémentaires..." 
+                                            value={form.notes} 
+                                            onChange={e => setForm({...form, notes: e.target.value})}
+                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500"></textarea>
+                                    </div>
+                                    <div className="flex justify-end gap-3 pt-2">
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setModalOpen(false)}
+                                            className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-sm font-medium hover:bg-slate-700 cursor-pointer">
+                                            Annuler
+                                        </button>
+                                        <button 
+                                            type="submit" 
+                                            className="px-5 py-2.5 rounded-xl bg-cyan-500 text-slate-950 text-sm font-bold hover:bg-cyan-400 cursor-pointer shadow-lg shadow-cyan-500/20">
+                                            Enregistrer
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
 </body>
 </html>
