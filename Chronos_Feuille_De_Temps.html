@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pedro - Feuille de Temps & Déplacements</title>
+  
+  <!-- Material & Futuristic Styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #0b0f19;
+      --card-dark: rgba(18, 24, 38, 0.85);
+      --accent-cyan: #06b6d4;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-dark);
+      color: #f1f5f9;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.12) 0px, transparent 50%);
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+    }
+    .glow-cyan {
+      box-shadow: 0 0 20px -5px rgba(6, 182, 212, 0.4);
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+  </style>
+</head>
+<body class="p-3 md:p-6 pb-24">
+  <div id="app" class="max-w-6xl mx-auto space-y-6">
+    <!-- Header -->
+    <header class="glass-panel rounded-2xl p-4 flex justify-between items-center relative z-50">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center glow-cyan font-bold text-lg text-white">
+          ⏱️
+        </div>
+        <div>
+          <h1 class="text-lg md:text-xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 via-teal-300 to-blue-500 bg-clip-text text-transparent">
+            Chronos
+          </h1>
+          <p class="text-xs text-slate-400">Feuille de Temps & Déplacements</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button id="menu-btn" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+          ⋮
+        </button>
+      </div>
+    </header>
+
+    <div class="text-center p-8 glass-panel rounded-2xl">
+      <h2 class="text-2xl font-bold text-cyan-400 mb-2">Application Autonome Chronos</h2>
+      <p class="text-slate-300 max-w-lg mx-auto mb-4">
+        Cette version HTML autonome s'exécute directement sur tout navigateur Web ou WebView Android avec support IndexedDB et File System Access API.
+      </p>
+      <p class="text-xs text-slate-500">Intégration complète prêtes avec export PDF fr-FR.</p>
+    </div>
+  </div>
+
+  <script>
+    console.log("Chronos App Standalone ready.");
+  </script>
+</body>
+</html>
