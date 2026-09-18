@@ -215,9 +215,8 @@
     </table>
   </div>
 
-  <!-- Grupo de Botões Inferiores -->
   <div class="row" style="margin-bottom: 10px;">
-    <button type="button" class="btn-save" id="btnSaveGithub" disabled>☁️ Enregistrer sur GitHub</button>
+    <button type="button" class="btn-save" id="btnSaveGithub" disabled>☁️ Enregistrer</button>
     <button type="button" class="btn-pdf" id="btnExportPdf" disabled>📄 Exporter PDF</button>
   </div>
   
@@ -316,6 +315,7 @@
     }
   }
 
+  // --- RENDERIZAR TABELA (MAPEAMENTO CORRIGIDO) ---
   function renderizarTabela() {
     tableBody.innerHTML = '';
     let totalMinutos = 0;
@@ -334,9 +334,10 @@
     }
 
     registosMes.forEach((item, index) => {
-      const valData = item.date || item.Date || item.data || '-';
+      // Verifica maiúsculas e minúsculas vindas do JSON
+      const valData = item.date || item.Date || item.data || item.Data || '-';
       const valLieu = item.lieu || item.Lieu || item.client || item.Client || '-';
-      const valHeures = item.heures || item.Heures || item.horas || '00:00';
+      const valHeures = item.heures || item.Heures || item.horas || item.Horas || '00:00';
 
       totalMinutos += parseTimeToMinutes(valHeures);
 
@@ -373,7 +374,7 @@
     renderizarTabela();
   }
 
-  // --- GERAR E EXPORTAR PDF (COM MAPEAMENTO DE CHAVES CORRIGIDO) ---
+  // --- GERAR PDF ---
   btnExportPdf.addEventListener('click', () => {
     if (registosMes.length === 0) return;
 
@@ -383,7 +384,6 @@
     const nomeMesText = selectMes.options[selectMes.selectedIndex].text;
     const anoText = selectAno.value;
 
-    // Cabeçalho da Empresa / Identificação Profissional
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
     doc.text("JU CLEAN", 14, 18);
@@ -394,23 +394,19 @@
     doc.text("Services d'entretien et nettoyage", 14, 29);
     doc.text("Yffiniac, France", 14, 34);
 
-    // Linha divisória
     doc.setLineWidth(0.5);
     doc.line(14, 38, 196, 38);
 
-    // Título do Relatório
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.text(`SUIVI DES HEURES ET DÉPLACEMENTS - ${nomeMesText.toUpperCase()} ${anoText}`, 14, 46);
 
-    // Prepara as linhas mapeando todas as opções possíveis de chaves no JSON
     const rows = registosMes.map(item => [
-      item.date || item.Date || item.data || '-',
+      item.date || item.Date || item.data || item.Data || '-',
       item.lieu || item.Lieu || item.client || item.Client || '-',
-      item.heures || item.Heures || item.horas || '00:00'
+      item.heures || item.Heures || item.horas || item.Horas || '00:00'
     ]);
 
-    // Geração da Tabela em PDF
     doc.autoTable({
       startY: 52,
       head: [['Date', 'Lieu / Client', 'Heures']],
@@ -425,13 +421,11 @@
       }
     });
 
-    // Totalizador no Rodapé do PDF
     const finalY = doc.lastAutoTable.finalY + 10;
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.text(`Total des Heures: ${totalHeuresDisplay.textContent}`, 196, finalY, { align: 'right' });
 
-    // Download do ficheiro PDF
     doc.save(`Heures_${anoText}_${selectMes.value}.pdf`);
   });
 
@@ -459,11 +453,11 @@
         sha = fileData.sha;
       }
 
-      // Padroniza o salvamento em minúsculas
+      // Padroniza as chaves para salvar tudo em minúsculas
       const dadosPadronizados = registosMes.map(item => ({
-        date: item.date || item.Date || item.data || '',
+        date: item.date || item.Date || item.data || item.Data || '',
         lieu: item.lieu || item.Lieu || item.client || item.Client || '',
-        heures: item.heures || item.Heures || item.horas || ''
+        heures: item.heures || item.Heures || item.horas || item.Horas || ''
       }));
 
       const jsonContent = JSON.stringify(dadosPadronizados, null, 2);
