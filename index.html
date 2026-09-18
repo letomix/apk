@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registre des heures et des déplacements, Pedro</title>
+    <title>Suivi des heures et déplacements</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -52,7 +52,7 @@
         }
 
         h1 {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             color: var(--text);
         }
 
@@ -80,11 +80,6 @@
             align-items: center;
             justify-content: center;
             gap: 6px;
-            transition: opacity 0.2s;
-        }
-
-        button:active {
-            opacity: 0.8;
         }
 
         button.success { background-color: var(--success); }
@@ -149,11 +144,12 @@
         }
 
         .status-box {
-            padding: 10px;
+            padding: 12px;
             border-radius: 6px;
             margin-bottom: 16px;
             font-size: 0.9rem;
             display: none;
+            word-break: break-word;
         }
 
         .status-box.info { background: #dbeafe; color: #1e40af; display: block; }
@@ -192,7 +188,7 @@
 
 <div class="container">
     <header>
-        <h1>Registre des heures et des déplacements, Pedro</h1>
+        <h1>Suivi des heures et déplacements</h1>
         <div class="controls-head">
             <select id="yearSelect" onchange="carregarOnline()">
                 <option value="2026" selected>2026</option>
@@ -200,87 +196,87 @@
             </select>
             <select id="monthSelect" onchange="carregarOnline()">
                 <option value="01">01 - Jan</option>
-                <option value="02">02 - Fev</option>
+                <option value="02">02 - Fév</option>
                 <option value="03">03 - Mar</option>
-                <option value="04">04 - Abr</option>
+                <option value="04">04 - Avr</option>
                 <option value="05">05 - Mai</option>
-                <option value="06">06 - Jun</option>
-                <option value="07">07 - Jul</option>
-                <option value="08" selected>08 - Ago</option>
-                <option value="09">09 - Set</option>
-                <option value="10">10 - Out</option>
+                <option value="06">06 - Juin</option>
+                <option value="07">07 - Juil</option>
+                <option value="08" selected>08 - Août</option>
+                <option value="09">09 - Sept</option>
+                <option value="10">10 - Oct</option>
                 <option value="11">11 - Nov</option>
-                <option value="12">12 - Dez</option>
+                <option value="12">12 - Déc</option>
             </select>
         </div>
     </header>
 
     <div id="statusBox" class="status-box"></div>
 
-    <!-- Formulário para Adicionar -->
+    <!-- Formulaire -->
     <form id="addForm" onsubmit="adicionarRegisto(event)" class="form-grid">
         <div class="form-group">
-            <label for="inputData">Data (dados)</label>
+            <label for="inputData">Date (dados)</label>
             <input type="date" id="inputData" required>
         </div>
         <div class="form-group">
-            <label for="inputLocal">Local (local)</label>
+            <label for="inputLocal">Lieu / Client (local)</label>
             <input type="text" id="inputLocal" placeholder="Ex: quimper" required>
         </div>
         <div class="form-group">
-            <label for="inputHoras">Horas (horas)</label>
+            <label for="inputHoras">Heures (horas)</label>
             <input type="time" id="inputHoras" required>
         </div>
         <div class="form-group" style="justify-content: flex-end;">
-            <button type="submit">+ Adicionar</button>
+            <button type="submit">+ Ajouter</button>
         </div>
     </form>
 
-    <!-- Estatísticas -->
+    <!-- Statistiques -->
     <div class="stats-bar">
-        <span>Total do Mês:</span>
+        <span>Total des Heures:</span>
         <span id="totalBadge" style="font-size: 1.2rem;">00:00h</span>
     </div>
 
-    <!-- Tabela de Dados -->
+    <!-- Tableau -->
     <div class="table-container">
         <table>
             <thead>
                 <tr>
-                    <th>Data</th>
-                    <th>Local</th>
-                    <th>Horas</th>
-                    <th style="text-align: center; width: 60px;">Ação</th>
+                    <th>Date</th>
+                    <th>Lieu</th>
+                    <th>Heures</th>
+                    <th style="text-align: center; width: 60px;">Action</th>
                 </tr>
             </thead>
             <tbody id="tabelaCorpo">
-                <tr><td colspan="4" style="text-align:center;">A carregar dados online...</td></tr>
+                <tr><td colspan="4" style="text-align:center;">Chargement...</td></tr>
             </tbody>
         </table>
     </div>
 
-    <!-- Botões Online para Telemóvel -->
+    <!-- Actions Online -->
     <div class="online-actions">
         <button type="button" class="success" style="flex: 2; padding: 12px;" onclick="guardarNoGithubDirecto()">
-            ☁️ Guardar Online no GitHub
+            ☁️ Enregistrer sur GitHub
         </button>
         <button type="button" class="secondary" style="flex: 1;" onclick="abrirModalConfig()">
-            ⚙️ Token
+            ⚙️ Token GitHub
         </button>
     </div>
 </div>
 
-<!-- Modal para Configurar Token do GitHub -->
+<!-- Modal Token -->
 <div id="modalToken" class="modal">
     <div class="modal-content">
-        <h3 style="margin-bottom: 12px;">Acesso ao GitHub</h3>
+        <h3 style="margin-bottom: 12px;">Accès GitHub</h3>
         <p style="font-size: 0.85rem; color: #475569; margin-bottom: 12px;">
-            Para guardar diretamente do telemóvel no GitHub sem descarregar ficheiros, insira o seu Personal Access Token do GitHub.
+            Collez votre Personal Access Token (ghp_...) pour sauvegarder directement depuis le téléphone.
         </p>
         <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="width: 100%; margin-bottom: 12px;">
         <div style="display: flex; gap: 8px; justify-content: flex-end;">
-            <button type="button" class="secondary" onclick="fecharModalConfig()">Cancelar</button>
-            <button type="button" onclick="guardarToken()">Guardar Token</button>
+            <button type="button" class="secondary" onclick="fecharModalConfig()">Annuler</button>
+            <button type="button" onclick="guardarToken()">Enregistrer le Token</button>
         </div>
     </div>
 </div>
@@ -289,37 +285,27 @@
     const REPO = "letomix/apk";
     let registos = [];
 
-    // Coloca a data de hoje por defeito
     document.getElementById('inputData').valueAsDate = new Date();
 
-    // 1. LEITURA AUTOMÁTICA DA RAIZ OU PASTA DO ANO
     async function carregarOnline() {
         const ano = document.getElementById('yearSelect').value;
         const mes = document.getElementById('monthSelect').value;
-        
-        mostrarStatus(`A carregar dados de ${mes}/${ano}...`, 'info');
+        const path = `${mes}.json`;
 
-        // Tenta primeiro na raiz (ex: 08.json) e depois na pasta do ano (ex: 2026/08.json)
-        const caminhos = [`${mes}.json`, `${ano}/${mes}.json`];
-        let carregado = false;
+        mostrarStatus(`Chargement de ${path}...`, 'info');
 
-        for (let path of caminhos) {
-            try {
-                const res = await fetch(path, { cache: "no-store" });
-                if (res.ok) {
-                    registos = await res.json();
-                    carregado = true;
-                    mostrarStatus(`Dados carregados online (${path})`, 'success');
-                    break;
-                }
-            } catch (e) {
-                // Continua para o próximo caminho
+        try {
+            const res = await fetch(`${path}?t=${Date.now()}`, { cache: "no-store" });
+            if (res.ok) {
+                registos = await res.json();
+                mostrarStatus(`Fichier ${path} chargé avec succès!`, 'success');
+            } else {
+                registos = [];
+                mostrarStatus(`Fichier ${path} introuvable sur la racine du GitHub.`, 'error');
             }
-        }
-
-        if (!carregado) {
+        } catch (e) {
             registos = [];
-            mostrarStatus(`Aviso: Ficheiro ${mes}.json não encontrado online. Pode criar novos registos e guardar.`, 'error');
+            mostrarStatus(`Erreur de connexion lors du chargement.`, 'error');
         }
 
         renderizarTabela();
@@ -330,7 +316,7 @@
         tbody.innerHTML = '';
 
         if (registos.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum registo neste mês.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Aucun enregistrement.</td></tr>';
             document.getElementById('totalBadge').innerText = '00:00h';
             return;
         }
@@ -371,7 +357,7 @@
 
         document.getElementById('inputLocal').value = '';
         document.getElementById('inputHoras').value = '';
-        mostrarStatus('Registo adicionado. Clique em "Guardar Online no GitHub".', 'info');
+        mostrarStatus('Enregistré localement. Cliquez sur "Enregistrer sur GitHub".', 'info');
     }
 
     function eliminarRegisto(idx) {
@@ -379,39 +365,47 @@
         renderizarTabela();
     }
 
-    // 2. ESCRITA DIRETA NO GITHUB VIA API (Ideal para telemóvel)
     async function guardarNoGithubDirecto() {
-        const token = localStorage.getItem('gh_token');
+        let token = localStorage.getItem('gh_token');
+        if (token) token = token.trim();
+
         if (!token) {
             abrirModalConfig();
-            mostrarStatus('Configure o seu Token do GitHub para guardar diretamente no telemóvel.', 'error');
+            mostrarStatus('Veuillez d\'abord configurer votre Token GitHub.', 'error');
             return;
         }
 
-        const ano = document.getElementById('yearSelect').value;
         const mes = document.getElementById('monthSelect').value;
         const path = `${mes}.json`;
 
-        mostrarStatus('A guardar diretamente no GitHub...', 'info');
+        mostrarStatus('Enregistrement sur GitHub en cours...', 'info');
 
         try {
-            // Passo 1: Obter SHA do ficheiro existente
+            // 1. Obtenir le SHA du fichier existant
             let sha = null;
-            const getRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${path}`, {
-                headers: { 'Authorization': `token ${token}` }
+            const getRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${path}?t=${Date.now()}`, {
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
             });
 
             if (getRes.ok) {
                 const fileData = await getRes.json();
                 sha = fileData.sha;
+            } else if (getRes.status === 401) {
+                throw new Error("Token invalide ou expiré (401 Bad Credentials).");
+            } else if (getRes.status === 403) {
+                throw new Error("Le Token n'a pas les permissions requises (Cochez 'repo').");
             }
 
-            // Passo 2: Fazer o Commit online
+            // 2. Commit vers GitHub
             const jsonString = JSON.stringify(registos, null, 2);
+            // Conversion UTF-8 vers Base64 sécurisée pour accents/caractères spéciaux
             const contentBase64 = btoa(unescape(encodeURIComponent(jsonString)));
 
             const bodyData = {
-                message: `Atualização de ${mes}/${ano} via Web App`,
+                message: `Mise à jour de ${path} via Web App`,
                 content: contentBase64,
                 branch: "main"
             };
@@ -420,24 +414,24 @@
             const putRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${path}`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `token ${token}`,
-                    'Content-Type': 'application/json'
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/vnd.github.v3+json'
                 },
                 body: JSON.stringify(bodyData)
             });
 
             if (putRes.ok) {
-                mostrarStatus(`Guardado com sucesso no GitHub (${path})!`, 'success');
+                mostrarStatus(`✅ Fichier ${path} sauvegardé avec succès sur GitHub!`, 'success');
             } else {
-                const err = await putRes.json();
-                throw new Error(err.message || 'Erro ao guardar');
+                const errData = await putRes.json();
+                throw new Error(errData.message || `Erreur HTTP ${putRes.status}`);
             }
         } catch (e) {
-            mostrarStatus(`Erro ao guardar online: ${e.message}`, 'error');
+            mostrarStatus(`❌ Erreur lors de la sauvegarde: ${e.message}`, 'error');
         }
     }
 
-    // Gestão do Token
     function abrirModalConfig() {
         document.getElementById('tokenInput').value = localStorage.getItem('gh_token') || '';
         document.getElementById('modalToken').style.display = 'flex';
@@ -451,7 +445,7 @@
         const val = document.getElementById('tokenInput').value.trim();
         if (val) {
             localStorage.setItem('gh_token', val);
-            mostrarStatus('Token guardado com sucesso!', 'success');
+            mostrarStatus('Token enregistré avec succès!', 'success');
         }
         fecharModalConfig();
     }
@@ -462,7 +456,6 @@
         box.className = `status-box ${tipo}`;
     }
 
-    // Carregamento automático ao abrir a página
     window.onload = carregarOnline;
 </script>
 
