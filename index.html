@@ -1,285 +1,275 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pedro -  Déplacements</title>
-    <!-- Favicon a partir do ficheiro icon.png na raiz -->
-    <link rel="icon" type="image/png" href="icon.png">
-    <link rel="apple-touch-icon" href="icon.png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <style>
-        body { background-color: #0b0f19; color: #f3f4f6; font-family: system-ui, -apple-system, sans-serif; }
-    </style>
-</head>
-<body class="min-h-screen flex flex-col">
-    <div id="root" class="flex-1 flex flex-col"></div>
+<script type="text/babel">
+    const { useState, useEffect, useRef } = React;
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+    function App() {
+        const [records, setRecords] = useState([]);
+        const [modalOpen, setModalOpen] = useState(false);
+        const fileInputRef = useRef(null);
+        
+        const currentMonthDefault = new Date().toISOString().slice(0, 7);
+        const [selectedMonth, setSelectedMonth] = useState(currentMonthDefault);
 
-        function App() {
-            const [records, setRecords] = useState([]);
-            const [modalOpen, setModalOpen] = useState(false);
-            
-            const currentMonthDefault = new Date().toISOString().slice(0, 7);
-            const [selectedMonth, setSelectedMonth] = useState(currentMonthDefault);
-            const [filterType, setFilterType] = useState('Tous');
+        const [form, setForm] = useState({
+            date: new Date().toISOString().split('T')[0],
+            location: '',
+            hours: '',
+            overtime: '0'
+        });
 
-            const [form, setForm] = useState({
-                type: 'Déplacement',
+        useEffect(() => {
+            const saved = localStorage.getItem('pedro_records_pro');
+            if (saved) {
+                try { setRecords(JSON.parse(saved)); } catch(e) {}
+            }
+        }, []);
+
+        const saveData = (newRecords) => {
+            setRecords(newRecords);
+            localStorage.setItem('pedro_records_pro', JSON.stringify(newRecords));
+        };
+
+        const saveRecord = (e) => {
+            e.preventDefault();
+            if (!form.location || !form.hours) return;
+            const newRecords = [ { id: Date.now(), ...form }, ...records ];
+            saveData(newRecords);
+            setForm({
                 date: new Date().toISOString().split('T')[0],
-                client: '',
                 location: '',
                 hours: '',
-                overtime: '0',
-                notes: ''
+                overtime: '0'
             });
+            setModalOpen(false);
+        };
 
-            useEffect(() => {
-                const saved = localStorage.getItem('chronos_records_pro');
-                if (saved) {
-                    try { setRecords(JSON.parse(saved)); } catch(e) {}
-                }
-            }, []);
+        const deleteRecord = (id) => {
+            const newRecords = records.filter(r => r.id !== id);
+            saveData(newRecords);
+        };
 
-            const saveRecord = (e) => {
-                e.preventDefault();
-                if (!form.client || !form.hours) return;
-                const newRecords = [ { id: Date.now(), ...form }, ...records ];
-                setRecords(newRecords);
-                localStorage.setItem('chronos_records_pro', JSON.stringify(newRecords));
-                setForm({
-                    type: 'Déplacement',
-                    date: new Date().toISOString().split('T')[0],
-                    client: '',
-                    location: '',
-                    hours: '',
-                    overtime: '0',
-                    notes: ''
-                });
-                setModalOpen(false);
-            };
+        // Função para Exportar dados para um arquivo JSON no computador/telemóvel
+        const exportToFile = () => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(records, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `pedro_horas_${selectedMonth}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        };
 
-            const deleteRecord = (id) => {
-                const newRecords = records.filter(r => r.id !== id);
-                setRecords(newRecords);
-                localStorage.setItem('chronos_records_pro', JSON.stringify(newRecords));
-            };
+        // Função para Importar dados de um arquivo salvo anteriormente
+        const importFromFile = (e) => {
+            const fileReader = new FileReader();
+            if (e.target.files[0]) {
+                fileReader.readAsText(e.target.files[0], "UTF-8");
+                fileReader.onload = (event) => {
+                    try {
+                        const importedRecords = JSON.parse(event.target.result);
+                        if (Array.isArray(importedRecords)) {
+                            saveData(importedRecords);
+                            alert("Dados importados com sucesso!");
+                        } else {
+                            alert("O ficheiro não tem o formato correto.");
+                        }
+                    } catch (error) {
+                        alert("Erro ao ler o ficheiro.");
+                    }
+                };
+            }
+        };
 
-            const filteredRecords = records.filter(r => {
-                const recordMonth = r.date ? r.date.slice(0, 7) : '';
-                const matchesMonth = recordMonth === selectedMonth;
-                const matchesType = filterType === 'Tous' || r.type === filterType;
-                return matchesMonth && matchesType;
-            });
+        const filteredRecords = records.filter(r => {
+            const recordMonth = r.date ? r.date.slice(0, 7) : '';
+            return recordMonth === selectedMonth;
+        });
 
-            const totalHours = filteredRecords.reduce((acc, curr) => acc + (parseFloat(curr.hours) || 0), 0);
-            const totalOvertime = filteredRecords.reduce((acc, curr) => acc + (parseFloat(curr.overtime) || 0), 0);
+        const totalHours = filteredRecords.reduce((acc, curr) => acc + (parseFloat(curr.hours) || 0), 0);
+        const totalOvertime = filteredRecords.reduce((acc, curr) => acc + (parseFloat(curr.overtime) || 0), 0);
 
-            return (
-                <div className="flex-1 flex flex-col max-w-4xl w-full mx-auto p-4 md:p-6">
-                    <header className="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900/80 backdrop-blur border border-slate-800 rounded-2xl p-6 mb-6 shadow-xl gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-cyan-500/10 p-3 rounded-xl border border-cyan-500/20 text-cyan-400">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                            </div>
-                            <div>
-                                <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                                    Chronos <span className="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-500/30">PRO</span>
-                                </h1>
-                                <p className="text-slate-400 text-sm">Formations & Déplacements</p>
-                            </div>
+        return (
+            <div className="flex-1 flex flex-col max-w-4xl w-full mx-auto p-4 md:p-6">
+                <header className="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900/85 backdrop-blur border border-slate-800 rounded-2xl p-6 mb-6 shadow-xl gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-cyan-500/10 p-3 rounded-xl border border-cyan-500/20 text-cyan-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                         </div>
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                                Pedro <span className="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-500/30">Horas</span>
+                            </h1>
+                            <p className="text-slate-400 text-sm">Controlo de Dias, Vilas e Horas Extras</p>
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                        <button 
+                            onClick={() => fileInputRef.current.click()}
+                            className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium px-4 py-2.5 rounded-xl border border-slate-700 transition-all flex items-center gap-2 cursor-pointer text-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            Carregar
+                        </button>
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            onChange={importFromFile} 
+                            accept=".json" 
+                            className="hidden" 
+                        />
+                        <button 
+                            onClick={exportToFile}
+                            className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium px-4 py-2.5 rounded-xl border border-slate-700 transition-all flex items-center gap-2 cursor-pointer text-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Guardar Ficheiro
+                        </button>
                         <button 
                             onClick={() => setModalOpen(true)}
-                            className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-medium px-5 py-2.5 rounded-xl shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-2 cursor-pointer w-full md:w-auto justify-center">
+                            className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-medium px-5 py-2.5 rounded-xl shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-2 cursor-pointer flex-1 md:flex-none justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                            Ajouter Entrée
+                            Adicionar
                         </button>
-                    </header>
+                    </div>
+                </header>
 
-                    <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div className="flex items-center gap-3 w-full md:w-auto">
-                            <label className="text-sm font-medium text-slate-300">Mois :</label>
-                            <input 
-                                type="month" 
-                                value={selectedMonth} 
-                                onChange={e => setSelectedMonth(e.target.value)}
-                                className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500" 
-                            />
-                        </div>
-
-                        <div className="flex gap-4 text-sm w-full md:w-auto justify-end">
-                            <div className="bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
-                                <span className="text-slate-400 text-xs block">Normales</span>
-                                <span className="text-cyan-400 font-bold">{totalHours} h</span>
-                            </div>
-                            <div className="bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
-                                <span className="text-slate-400 text-xs block">Heures Sup.</span>
-                                <span className="text-amber-400 font-bold">{totalOvertime} h</span>
-                            </div>
-                        </div>
+                <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div className="flex items-center gap-3 w-full md:w-auto">
+                        <label className="text-sm font-medium text-slate-300">Mês:</label>
+                        <input 
+                            type="month" 
+                            value={selectedMonth} 
+                            onChange={e => setSelectedMonth(e.target.value)}
+                            className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500" 
+                        />
                     </div>
 
-                    <div className="flex gap-2 overflow-x-auto pb-2 mb-6">
-                        {['Tous', 'Déplacement', 'Formation'].map(tab => (
-                            <button
-                                key={tab}
-                                onClick={() => setFilterType(tab)}
-                                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap cursor-pointer border ${filterType === tab ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow' : 'bg-slate-900/40 text-slate-400 border-slate-800 hover:bg-slate-800'}`}>
-                                {tab}
-                            </button>
-                        ))}
+                    <div className="flex gap-4 text-sm w-full md:w-auto justify-end">
+                        <div className="bg-slate-950 px-3.5 py-2 rounded-xl border border-slate-800">
+                            <span className="text-slate-400 text-xs block">Total Horas</span>
+                            <span className="text-cyan-400 font-bold text-base">{totalHours} h</span>
+                        </div>
+                        <div className="bg-slate-950 px-3.5 py-2 rounded-xl border border-slate-800">
+                            <span className="text-slate-400 text-xs block">Total Extras</span>
+                            <span className="text-amber-400 font-bold text-base">{totalOvertime} h</span>
+                        </div>
                     </div>
+                </div>
 
-                    <div className="flex-1 space-y-3">
-                        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                            Enregistrements pour {selectedMonth} ({filteredRecords.length})
-                        </h2>
+                <div className="flex-1 space-y-3">
+                    <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                        Registos de {selectedMonth} ({filteredRecords.length})
+                    </h2>
 
-                        {filteredRecords.length === 0 ? (
-                            <div className="text-center py-16 bg-slate-900/40 border border-slate-800 rounded-2xl">
-                                <p className="text-slate-500">Aucun enregistrement trouvé pour ce mois.</p>
-                                <p className="text-xs text-slate-600 mt-1">Modifiez le mois ou ajoutez une nouvelle entrée.</p>
-                            </div>
-                        ) : (
-                            filteredRecords.map(item => (
-                                <div key={item.id} className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:border-slate-700 transition-all">
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-md border ${item.type === 'Formation' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'}`}>
-                                                {item.type}
+                    {filteredRecords.length === 0 ? (
+                        <div className="text-center py-16 bg-slate-900/40 border border-slate-800 rounded-2xl">
+                            <p className="text-slate-500">Nenhum registo encontrado para este mês.</p>
+                            <p className="text-xs text-slate-600 mt-1">Altere o mês ou clique em "Adicionar" para criar um registo.</p>
+                        </div>
+                    ) : (
+                        filteredRecords.map(item => (
+                            <div key={item.id} className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:border-slate-700 transition-all">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="text-sm text-cyan-300 font-medium bg-cyan-500/10 px-2.5 py-0.5 rounded-md border border-cyan-500/20">
+                                            📅 {item.date}
+                                        </span>
+                                        {item.location && (
+                                            <span className="text-sm bg-slate-800 text-slate-200 px-2.5 py-0.5 rounded-md font-semibold">
+                                                📍 {item.location}
                                             </span>
-                                            <span className="text-sm text-slate-400">{item.date}</span>
-                                            {item.location && <span className="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded-md">📍 {item.location}</span>}
-                                        </div>
-                                        <h3 className="text-white font-semibold text-lg">{item.client}</h3>
-                                        {item.notes && <p className="text-slate-500 text-xs mt-1 italic">{item.notes}</p>}
-                                    </div>
-                                    <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-                                        <div className="text-right flex gap-3">
-                                            <div className="bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
-                                                <span className="text-[10px] text-slate-500 block">Normale</span>
-                                                <span className="text-cyan-400 font-bold">{item.hours} h</span>
-                                            </div>
-                                            {parseFloat(item.overtime) > 0 && (
-                                                <div className="bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
-                                                    <span className="text-[10px] text-slate-500 block">Sup.</span>
-                                                    <span className="text-amber-400 font-bold">+{item.overtime} h</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <button 
-                                            onClick={() => deleteRecord(item.id)}
-                                            className="text-slate-500 hover:text-red-400 p-2 transition-colors cursor-pointer" title="Supprimer">
-                                            ✕
-                                        </button>
+                                        )}
                                     </div>
                                 </div>
-                            ))
-                        )}
-                    </div>
-
-                    {modalOpen && (
-                        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                            <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
-                                <h3 className="text-xl font-bold text-white mb-4">Ajouter une Entrée</h3>
-                                <form onSubmit={saveRecord} className="space-y-4">
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-400 mb-1">Type d'activité</label>
-                                        <select 
-                                            value={form.type} 
-                                            onChange={e => setForm({...form, type: e.target.value})}
-                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500">
-                                            <option value="Déplacement">Déplacement</option>
-                                            <option value="Formation">Formation</option>
-                                        </select>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-xs font-medium text-slate-400 mb-1">Date</label>
-                                            <input 
-                                                type="date" 
-                                                value={form.date} 
-                                                onChange={e => setForm({...form, date: e.target.value})}
-                                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" />
+                                <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+                                    <div className="text-right flex gap-3">
+                                        <div className="bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+                                            <span className="text-[10px] text-slate-500 block">Horas</span>
+                                            <span className="text-cyan-400 font-bold">{item.hours} h</span>
                                         </div>
-                                        <div>
-                                            <label className="block text-xs font-medium text-slate-400 mb-1">Ville / Lieu</label>
-                                            <input 
-                                                type="text" 
-                                                placeholder="Ex: Yffiniac" 
-                                                value={form.location} 
-                                                onChange={e => setForm({...form, location: e.target.value})}
-                                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" />
-                                        </div>
+                                        {parseFloat(item.overtime) > 0 && (
+                                            <div className="bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+                                                <span className="text-[10px] text-slate-500 block">Extras</span>
+                                                <span className="text-amber-400 font-bold">+{item.overtime} h</span>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-xs font-medium text-slate-400 mb-1">Heures Normales</label>
-                                            <input 
-                                                type="number" 
-                                                step="0.5" 
-                                                placeholder="Ex: 7" 
-                                                value={form.hours} 
-                                                onChange={e => setForm({...form, hours: e.target.value})}
-                                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-medium text-slate-400 mb-1">Heures Supplémentaires</label>
-                                            <input 
-                                                type="number" 
-                                                step="0.5" 
-                                                placeholder="Ex: 2" 
-                                                value={form.overtime} 
-                                                onChange={e => setForm({...form, overtime: e.target.value})}
-                                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-400 mb-1">Intitulé / Client / Sujet</label>
-                                        <input 
-                                            type="text" 
-                                            placeholder="Ex: Client X ou Formation Logiciel" 
-                                            value={form.client} 
-                                            onChange={e => setForm({...form, client: e.target.value})}
-                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-slate-400 mb-1">Notes / Remarques</label>
-                                        <textarea 
-                                            rows="2" 
-                                            placeholder="Détails supplémentaires..." 
-                                            value={form.notes} 
-                                            onChange={e => setForm({...form, notes: e.target.value})}
-                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500"></textarea>
-                                    </div>
-                                    <div className="flex justify-end gap-3 pt-2">
-                                        <button 
-                                            type="button" 
-                                            onClick={() => setModalOpen(false)}
-                                            className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-sm font-medium hover:bg-slate-700 cursor-pointer">
-                                            Annuler
-                                        </button>
-                                        <button 
-                                            type="submit" 
-                                            className="px-5 py-2.5 rounded-xl bg-cyan-500 text-slate-950 text-sm font-bold hover:bg-cyan-400 cursor-pointer shadow-lg shadow-cyan-500/20">
-                                            Enregistrer
-                                        </button>
-                                    </div>
-                                </form>
+                                    <button 
+                                        onClick={() => deleteRecord(item.id)}
+                                        className="text-slate-500 hover:text-red-400 p-2 transition-colors cursor-pointer text-lg font-bold" title="Eliminar">
+                                        ✕
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        ))
                     )}
                 </div>
-            );
-        }
 
-        ReactDOM.render(<App />, document.getElementById('root'));
-    </script>
-</body>
-</html>
+                {modalOpen && (
+                    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+                            <h3 className="text-xl font-bold text-white mb-4">Adicionar Horas / Vila</h3>
+                            <form onSubmit={saveRecord} className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-400 mb-1">Data (Dia)</label>
+                                    <input 
+                                        type="date" 
+                                        value={form.date} 
+                                        onChange={e => setForm({...form, date: e.target.value})}
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" 
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-400 mb-1">Vila / Local</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Ex: Yffiniac" 
+                                        value={form.location} 
+                                        onChange={e => setForm({...form, location: e.target.value})}
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" 
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 mb-1">Horas</label>
+                                        <input 
+                                            type="number" 
+                                            step="0.5" 
+                                            placeholder="Ex: 7" 
+                                            value={form.hours} 
+                                            onChange={e => setForm({...form, hours: e.target.value})}
+                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" 
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-slate-400 mb-1">Horas Extras</label>
+                                        <input 
+                                            type="number" 
+                                            step="0.5" 
+                                            placeholder="Ex: 2" 
+                                            value={form.overtime} 
+                                            onChange={e => setForm({...form, overtime: e.target.value})}
+                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" 
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex justify-end gap-3 pt-2">
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setModalOpen(false)}
+                                        className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-sm font-medium hover:bg-slate-700 cursor-pointer">
+                                        Cancelar
+                                    </button>
+                                    <button 
+                                        type="submit" 
+                                        className="px-5 py-2.5 rounded-xl bg-cyan-500 text-slate-950 text-sm font-bold hover:bg-cyan-400 cursor-pointer shadow-lg shadow-cyan-500/20">
+                                        Guardar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+</script>
