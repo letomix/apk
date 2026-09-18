@@ -69,7 +69,7 @@
       font-weight: 500;
     }
 
-    /* Botões */
+    /* Estilos dos Botões */
     button {
       border: none;
       border-radius: 8px;
@@ -117,7 +117,7 @@
       flex: 1;
     }
 
-    /* Status Banner */
+    /* Painéis de Notificação */
     .status-banner {
       padding: 10px;
       border-radius: 8px;
@@ -146,7 +146,7 @@
       color: #0369a1;
     }
 
-    /* Total Panel */
+    /* Caixa de Totalização */
     .total-box {
       background-color: #eff6ff;
       padding: 12px;
@@ -237,10 +237,10 @@
     </div>
   </div>
 
-  <!-- Banners de Notificação -->
+  <!-- Banner de Notificação -->
   <div id="statusMessage" class="status-banner"></div>
 
-  <!-- Formulário de Inserção de Registos -->
+  <!-- Formulário de Entrada de Dados -->
   <div class="form-section">
     <div class="row">
       <div class="col">
@@ -258,13 +258,12 @@
         <input type="time" id="inputHeures">
       </div>
       <div class="col" style="display: flex; align-items: flex-end;">
-        <!-- Botão com Início Desativado se campos vazios -->
         <button type="button" class="btn-ajouter" id="btnAjouter" disabled>+ Ajouter</button>
       </div>
     </div>
   </div>
 
-  <!-- Totalizador de Horas -->
+  <!-- Exibição do Total de Horas -->
   <div class="total-box">
     <span>Total des Heures:</span>
     <span id="totalHeures">00:00h</span>
@@ -291,7 +290,7 @@
     </table>
   </div>
 
-  <!-- Ações de Guardar e Token -->
+  <!-- Botões de Ação com GitHub -->
   <div class="row">
     <button type="button" class="btn-save" id="btnSaveGithub" disabled>☁️ Enregistrer sur GitHub</button>
     <button type="button" class="btn-token" id="btnTokenGithub">⚙️ Token GitHub</button>
@@ -299,13 +298,15 @@
 </div>
 
 <script>
-  // Estado local dos registos em memória
+  /**
+   * Módulo de Gestão de Registos e Sincronização GitHub
+   */
   let registosMes = [];
   let githubToken = localStorage.getItem('github_token') || '';
-  const REPO_OWNER = 'letomix'; // Ajuste conforme o seu utilizador
-  const REPO_NAME = 'letomix.github.io'; // Ajuste conforme o seu repositório
+  const REPO_OWNER = 'letomix';
+  const REPO_NAME = 'letomix.github.io';
 
-  // Elementos do DOM
+  // Referências DOM
   const selectAno = document.getElementById('selectAno');
   const selectMes = document.getElementById('selectMes');
   const btnCharger = document.getElementById('btnCharger');
@@ -319,21 +320,21 @@
   const btnSaveGithub = document.getElementById('btnSaveGithub');
   const btnTokenGithub = document.getElementById('btnTokenGithub');
 
-  // Inicializa data atual no formulário
+  // Inicializa o campo com a data atual
   inputDate.valueAsDate = new Date();
 
-  // --- VALIDAÇÃO DE CAMPOS E BLOQUEIO DE BOTÕES ---
+  // --- VALIDAÇÕES DE INTERFACE ---
   function validarFormulario() {
-    const lieuPreenchido = inputLieu.value.trim() !== '';
-    const heuresPreenchidas = inputHeures.value.trim() !== '';
-    const datePreenchida = inputDate.value.trim() !== '';
+    const lieuValido = inputLieu.value.trim() !== '';
+    const heuresValidas = inputHeures.value.trim() !== '';
+    const dateValida = inputDate.value.trim() !== '';
 
-    // Ativa botão '+ Ajouter' apenas se tudo estiver preenchido
-    btnAjouter.disabled = !(lieuPreenchido && heuresPreenchidas && datePreenchida);
+    // O botão de adicionar só ativa com todos os campos preenchidos
+    btnAjouter.disabled = !(lieuValido && heuresValidas && dateValida);
   }
 
   function validarGravação() {
-    // Desativa o botão de salvar se a lista estiver totalmente vazia
+    // Impede o envio de dados caso a lista esteja vazia
     btnSaveGithub.disabled = registosMes.length === 0;
   }
 
@@ -341,15 +342,16 @@
   inputHeures.addEventListener('input', validarFormulario);
   inputDate.addEventListener('input', validarFormulario);
 
-  // --- FUNÇÕES UTILITÁRIAS ---
+  // --- UTILITÁRIOS ---
   function formatarData(dataISO) {
     if (!dataISO) return '';
-    const [ano, mes, dia] = dataISO.split('-');
-    return `${dia}/${mes}/${ano}`;
+    const partes = dataISO.split('-');
+    if (partes.length !== 3) return dataISO;
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
   }
 
   function parseTimeToMinutes(timeStr) {
-    if (!timeStr || !timeStr.includes(':')) return 0;
+    if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return 0;
     const [h, m] = timeStr.split(':').map(Number);
     return (h * 60) + (m || 0);
   }
@@ -365,12 +367,12 @@
     statusMessage.className = `status-banner show ${tipo}`;
   }
 
-  // --- CARREGAMENTO DE DADOS (READ) ---
+  // --- LEITURA E PROCESSAMENTO DO JSON ---
   async function carregarDados() {
     const ano = selectAno.value;
     const mes = selectMes.value;
     const filePath = `${ano}/${mes}.json`;
-    const url = `${filePath}?v=${new Date().getTime()}`; // Previne cache no telemóvel
+    const url = `${filePath}?v=${new Date().getTime()}`;
 
     try {
       exibirStatus(`A carregar dados de ${filePath}...`, 'info');
@@ -378,14 +380,14 @@
 
       if (!response.ok) {
         if (response.status === 404) {
-          throw new Error(`Ficheiro ${filePath} não encontrado. Adicione um novo registo.`);
+          throw new Error(`Ficheiro ${filePath} ainda não existe no repositório.`);
         }
         throw new Error(`Erro ao ler ficheiro (${response.status})`);
       }
 
       const data = await response.json();
       if (!Array.isArray(data)) {
-        throw new Error("Estrutura do ficheiro JSON inválida.");
+        throw new Error("Estrutura do ficheiro JSON em formato inválido.");
       }
 
       registosMes = data;
@@ -400,12 +402,12 @@
     }
   }
 
-  // --- RENDERIZAÇÃO DA TABELA ---
+  // --- RENDERIZAÇÃO RESISTENTE A NORMAS DIVERGENTES DE CHAVES ---
   function renderizarTabela() {
     tableBody.innerHTML = '';
     let totalMinutos = 0;
 
-    if (registosMes.length === 0) {
+    if (!Array.isArray(registosMes) || registosMes.length === 0) {
       tableBody.innerHTML = `
         <tr>
           <td colspan="4" style="text-align: center; color: #9ca3af; padding: 15px;">
@@ -419,13 +421,18 @@
     }
 
     registosMes.forEach((item, index) => {
-      totalMinutos += parseTimeToMinutes(item.heures);
+      // Mapeamento dinâmico para evitar 'undefined'
+      const valData = item.date || item.Date || item.data || '-';
+      const valLieu = item.lieu || item.Lieu || item.client || item.Client || item.local || '-';
+      const valHeures = item.heures || item.Heures || item.horas || item.Horas || '00:00';
+
+      totalMinutos += parseTimeToMinutes(valHeures);
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${item.date}</td>
-        <td>${item.lieu}</td>
-        <td>${item.heures}</td>
+        <td>${valData}</td>
+        <td>${valLieu}</td>
+        <td>${valHeures}</td>
         <td style="text-align: center;">
           <button type="button" class="btn-delete" onclick="removerRegisto(${index})">🗑️</button>
         </td>
@@ -437,7 +444,7 @@
     validarGravação();
   }
 
-  // --- ADICIONAR E REMOVER REGISTOS ---
+  // --- CONTROLO DE DADOS EM MEMÓRIA ---
   btnAjouter.addEventListener('click', () => {
     const novoRegisto = {
       date: formatarData(inputDate.value),
@@ -448,7 +455,7 @@
     registosMes.push(novoRegisto);
     renderizarTabela();
 
-    // Limpa campos
+    // Limpa os campos após adicionar
     inputLieu.value = '';
     inputHeures.value = '';
     validarFormulario();
@@ -459,15 +466,15 @@
     renderizarTabela();
   }
 
-  // --- GUARDAR NO GITHUB (API) ---
+  // --- GRAVAÇÃO NA API DO GITHUB ---
   btnSaveGithub.addEventListener('click', async () => {
     if (!githubToken) {
-      alert("Por favor configure primeiro o Token do GitHub.");
+      alert("Configure o Token do GitHub antes de continuar.");
       return;
     }
 
     if (registosMes.length === 0) {
-      alert("Não é possível gravar uma lista sem registos.");
+      alert("Operação cancelada: Não é possível gravar uma lista sem registos.");
       return;
     }
 
@@ -479,20 +486,23 @@
     try {
       exibirStatus("A guardar dados no GitHub...", "info");
 
-      // 1. Obter SHA do ficheiro caso já exista
+      // Obter o SHA do ficheiro existente para permitir a atualização
       let sha = "";
       const getRes = await fetch(apiUrl, {
         headers: { "Authorization": `token ${githubToken}` }
       });
+      
       if (getRes.ok) {
         const fileData = await getRes.json();
         sha = fileData.sha;
       }
 
-      // 2. Enviar Commit com os dados
-      const contentEncoded = btoa(unescape(encodeURIComponent(JSON.stringify(registosMes, null, 2))));
+      // Preparação e codificação UTF-8 -> Base64
+      const jsonContent = JSON.stringify(registosMes, null, 2);
+      const contentEncoded = btoa(unescape(encodeURIComponent(jsonContent)));
+
       const payload = {
-        message: `Atualização de horas: ${mes}/${ano}`,
+        message: `Mise à jour des heures: ${mes}/${ano}`,
         content: contentEncoded,
         sha: sha !== "" ? sha : undefined
       };
@@ -507,9 +517,9 @@
       });
 
       if (putRes.ok) {
-        exibirStatus("Dados gravados com sucesso no GitHub!", "success");
+        exibirStatus("Données enregistrées avec succès sur GitHub!", "success");
       } else {
-        throw new Error(`Erro na gravação: ${putRes.statusText}`);
+        throw new Error(`Erro na gravação GitHub (${putRes.status})`);
       }
 
     } catch (err) {
@@ -518,7 +528,7 @@
     }
   });
 
-  // --- CONFIGURAÇÃO DO TOKEN ---
+  // --- GESTÃO DO TOKEN ---
   btnTokenGithub.addEventListener('click', () => {
     const input = prompt("Insira o seu Personal Access Token do GitHub:", githubToken);
     if (input !== null) {
@@ -530,7 +540,7 @@
 
   btnCharger.addEventListener('click', carregarDados);
 
-  // Executa o carregamento inicial
+  // Carregamento automático na abertura
   carregarDados();
 </script>
 </body>
