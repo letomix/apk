@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Suivi des heures et déplacements</title>
+
+  <!-- Bibliotecas para Geração do PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -53,7 +58,6 @@
       font-size: 0.95rem;
       background-color: #f8f9fa;
       outline: none;
-      transition: border-color 0.2s;
     }
 
     select:focus, input:focus {
@@ -69,7 +73,6 @@
       font-weight: 500;
     }
 
-    /* Estilos dos Botões */
     button {
       border: none;
       border-radius: 8px;
@@ -77,47 +80,25 @@
       font-size: 0.95rem;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s ease;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
+      transition: all 0.2s;
     }
 
     button:disabled {
       background-color: #d1d5db !important;
       color: #9ca3af !important;
       cursor: not-allowed !important;
-      transform: none !important;
-      box-shadow: none !important;
     }
 
-    .btn-charger {
-      background-color: #475569;
-      color: white;
-      width: 100%;
-    }
+    .btn-charger { background-color: #475569; color: white; width: 100%; }
+    .btn-ajouter { background-color: #2563eb; color: white; width: 100%; margin-top: 20px; }
+    .btn-save { background-color: #16a34a; color: white; flex: 1; }
+    .btn-pdf { background-color: #dc2626; color: white; flex: 1; }
+    .btn-token { background-color: #475569; color: white; width: 100%; }
 
-    .btn-ajouter {
-      background-color: #2563eb;
-      color: white;
-      width: 100%;
-      margin-top: 20px;
-    }
-
-    .btn-save {
-      background-color: #16a34a;
-      color: white;
-      flex: 1;
-    }
-
-    .btn-token {
-      background-color: #475569;
-      color: white;
-      flex: 1;
-    }
-
-    /* Painéis de Notificação */
     .status-banner {
       padding: 10px;
       border-radius: 8px;
@@ -126,27 +107,11 @@
       text-align: center;
       display: none;
     }
+    .status-banner.show { display: block; }
+    .status-banner.success { background-color: #dcfce7; color: #15803d; }
+    .status-banner.error { background-color: #fee2e2; color: #b91c1c; }
+    .status-banner.info { background-color: #e0f2fe; color: #0369a1; }
 
-    .status-banner.show {
-      display: block;
-    }
-
-    .status-banner.success {
-      background-color: #dcfce7;
-      color: #15803d;
-    }
-
-    .status-banner.error {
-      background-color: #fee2e2;
-      color: #b91c1c;
-    }
-
-    .status-banner.info {
-      background-color: #e0f2fe;
-      color: #0369a1;
-    }
-
-    /* Caixa de Totalização */
     .total-box {
       background-color: #eff6ff;
       padding: 12px;
@@ -159,48 +124,13 @@
       font-weight: bold;
     }
 
-    /* Tabela */
-    .table-container {
-      overflow-x: auto;
-      margin-bottom: 15px;
-    }
+    .table-container { overflow-x: auto; margin-bottom: 15px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th { text-align: left; padding: 8px; color: #6b7280; border-bottom: 1px solid #e5e7eb; }
+    td { padding: 10px 8px; border-bottom: 1px solid #f3f4f6; color: #1f2937; }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.88rem;
-    }
-
-    th {
-      text-align: left;
-      padding: 8px;
-      color: #6b7280;
-      border-bottom: 1px solid #e5e7eb;
-      font-weight: 500;
-    }
-
-    td {
-      padding: 10px 8px;
-      border-bottom: 1px solid #f3f4f6;
-      color: #1f2937;
-    }
-
-    .btn-delete {
-      background: none;
-      border: none;
-      color: #ef4444;
-      cursor: pointer;
-      padding: 4px;
-      font-size: 1rem;
-    }
-
-    .form-section {
-      background-color: #f9fafb;
-      padding: 12px;
-      border-radius: 10px;
-      border: 1px solid #f3f4f6;
-      margin-bottom: 15px;
-    }
+    .btn-delete { background: none; border: none; color: #ef4444; cursor: pointer; padding: 4px; }
+    .form-section { background-color: #f9fafb; padding: 12px; border-radius: 10px; border: 1px solid #f3f4f6; margin-bottom: 15px; }
   </style>
 </head>
 <body>
@@ -208,7 +138,6 @@
 <div class="container">
   <h2>Suivi des heures et déplacements</h2>
 
-  <!-- Seleção de Mês e Ano -->
   <div class="row">
     <div class="col" style="flex: 0.8;">
       <select id="selectAno">
@@ -237,10 +166,8 @@
     </div>
   </div>
 
-  <!-- Banner de Notificação -->
   <div id="statusMessage" class="status-banner"></div>
 
-  <!-- Formulário de Entrada de Dados -->
   <div class="form-section">
     <div class="row">
       <div class="col">
@@ -263,13 +190,11 @@
     </div>
   </div>
 
-  <!-- Exibição do Total de Horas -->
   <div class="total-box">
     <span>Total des Heures:</span>
     <span id="totalHeures">00:00h</span>
   </div>
 
-  <!-- Tabela de Registos -->
   <div class="table-container">
     <table>
       <thead>
@@ -290,23 +215,22 @@
     </table>
   </div>
 
-  <!-- Botões de Ação com GitHub -->
+  <!-- Botões de Ação -->
+  <div class="row" style="margin-bottom: 10px;">
+    <button type="button" class="btn-save" id="btnSaveGithub" disabled>☁️ Enregistrer</button>
+    <button type="button" class="btn-pdf" id="btnExportPdf" disabled>📄 Exporter PDF</button>
+  </div>
   <div class="row">
-    <button type="button" class="btn-save" id="btnSaveGithub" disabled>☁️ Enregistrer sur GitHub</button>
     <button type="button" class="btn-token" id="btnTokenGithub">⚙️ Token GitHub</button>
   </div>
 </div>
 
 <script>
-  /**
-   * Módulo de Gestão de Registos e Sincronização GitHub
-   */
   let registosMes = [];
   let githubToken = localStorage.getItem('github_token') || '';
   const REPO_OWNER = 'letomix';
   const REPO_NAME = 'letomix.github.io';
 
-  // Referências DOM
   const selectAno = document.getElementById('selectAno');
   const selectMes = document.getElementById('selectMes');
   const btnCharger = document.getElementById('btnCharger');
@@ -318,36 +242,32 @@
   const tableBody = document.getElementById('tableBody');
   const totalHeuresDisplay = document.getElementById('totalHeures');
   const btnSaveGithub = document.getElementById('btnSaveGithub');
+  const btnExportPdf = document.getElementById('btnExportPdf');
   const btnTokenGithub = document.getElementById('btnTokenGithub');
 
-  // Inicializa o campo com a data atual
   inputDate.valueAsDate = new Date();
 
-  // --- VALIDAÇÕES DE INTERFACE ---
   function validarFormulario() {
     const lieuValido = inputLieu.value.trim() !== '';
     const heuresValidas = inputHeures.value.trim() !== '';
     const dateValida = inputDate.value.trim() !== '';
-
-    // O botão de adicionar só ativa com todos os campos preenchidos
     btnAjouter.disabled = !(lieuValido && heuresValidas && dateValida);
   }
 
   function validarGravação() {
-    // Impede o envio de dados caso a lista esteja vazia
-    btnSaveGithub.disabled = registosMes.length === 0;
+    const temDados = registosMes.length > 0;
+    btnSaveGithub.disabled = !temDados;
+    btnExportPdf.disabled = !temDados;
   }
 
   inputLieu.addEventListener('input', validarFormulario);
   inputHeures.addEventListener('input', validarFormulario);
   inputDate.addEventListener('input', validarFormulario);
 
-  // --- UTILITÁRIOS ---
   function formatarData(dataISO) {
     if (!dataISO) return '';
     const partes = dataISO.split('-');
-    if (partes.length !== 3) return dataISO;
-    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    return partes.length === 3 ? `${partes[2]}/${partes[1]}/${partes[0]}` : dataISO;
   }
 
   function parseTimeToMinutes(timeStr) {
@@ -367,7 +287,6 @@
     statusMessage.className = `status-banner show ${tipo}`;
   }
 
-  // --- LEITURA E PROCESSAMENTO DO JSON ---
   async function carregarDados() {
     const ano = selectAno.value;
     const mes = selectMes.value;
@@ -379,30 +298,23 @@
       const response = await fetch(url, { cache: 'no-store' });
 
       if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error(`Ficheiro ${filePath} ainda não existe no repositório.`);
-        }
+        if (response.status === 404) throw new Error(`Ficheiro ${filePath} ainda não existe.`);
         throw new Error(`Erro ao ler ficheiro (${response.status})`);
       }
 
       const data = await response.json();
-      if (!Array.isArray(data)) {
-        throw new Error("Estrutura do ficheiro JSON em formato inválido.");
-      }
+      if (!Array.isArray(data)) throw new Error("Estrutura JSON inválida.");
 
       registosMes = data;
       renderizarTabela();
       exibirStatus(`Données chargées depuis ${filePath}`, 'success');
-
     } catch (error) {
-      console.warn(error);
       registosMes = [];
       renderizarTabela();
       exibirStatus(error.message, 'error');
     }
   }
 
-  // --- RENDERIZAÇÃO RESISTENTE A NORMAS DIVERGENTES DE CHAVES ---
   function renderizarTabela() {
     tableBody.innerHTML = '';
     let totalMinutos = 0;
@@ -421,10 +333,9 @@
     }
 
     registosMes.forEach((item, index) => {
-      // Mapeamento dinâmico para evitar 'undefined'
       const valData = item.date || item.Date || item.data || '-';
-      const valLieu = item.lieu || item.Lieu || item.client || item.Client || item.local || '-';
-      const valHeures = item.heures || item.Heures || item.horas || item.Horas || '00:00';
+      const valLieu = item.lieu || item.Lieu || item.client || item.Client || '-';
+      const valHeures = item.heures || item.Heures || item.horas || '00:00';
 
       totalMinutos += parseTimeToMinutes(valHeures);
 
@@ -444,18 +355,13 @@
     validarGravação();
   }
 
-  // --- CONTROLO DE DADOS EM MEMÓRIA ---
   btnAjouter.addEventListener('click', () => {
-    const novoRegisto = {
+    registosMes.push({
       date: formatarData(inputDate.value),
       lieu: inputLieu.value.trim(),
       heures: inputHeures.value
-    };
-
-    registosMes.push(novoRegisto);
+    });
     renderizarTabela();
-
-    // Limpa os campos após adicionar
     inputLieu.value = '';
     inputHeures.value = '';
     validarFormulario();
@@ -466,15 +372,72 @@
     renderizarTabela();
   }
 
-  // --- GRAVAÇÃO NA API DO GITHUB ---
+  // --- GERAR E EXPORTAR PDF ---
+  btnExportPdf.addEventListener('click', () => {
+    if (registosMes.length === 0) return;
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const nomeMesText = selectMes.options[selectMes.selectedIndex].text;
+    const anoText = selectAno.value;
+
+    // Cabeçalho da Empresa / Identificação Profissional
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("JU CLEAN", 14, 18);
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Pedro Salgado", 14, 24);
+    doc.text("Services d'entretien et nettoyage", 14, 29);
+    doc.text("Yffiniac, France", 14, 34);
+
+    // Linha divisória
+    doc.setLineWidth(0.5);
+    doc.line(14, 38, 196, 38);
+
+    // Título do Relatório
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(`SUIVI DES HEURES ET DÉPLACEMENTS - ${nomeMesText.toUpperCase()} ${anoText}`, 14, 46);
+
+    // Prepara linhas da tabela
+    const rows = registosMes.map(item => [
+      item.date || item.Date || item.data || '-',
+      item.lieu || item.Lieu || item.client || '-',
+      item.heures || item.Heures || item.horas || '00:00'
+    ]);
+
+    // Geração da Tabela em PDF
+    doc.autoTable({
+      startY: 52,
+      head: [['Date', 'Lieu / Client', 'Heures']],
+      body: rows,
+      theme: 'grid',
+      headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: 'bold' },
+      styles: { fontSize: 10, cellPadding: 3 },
+      columnStyles: {
+        0: { cellWidth: 40 },
+        1: { cellWidth: 100 },
+        2: { cellWidth: 40, halign: 'right' }
+      }
+    });
+
+    // Totalizador no Rodapé do PDF
+    const finalY = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total des Heures: ${totalHeuresDisplay.textContent}`, 196, finalY, { align: 'right' });
+
+    // Transferir ficheiro para o dispositivo
+    doc.save(`Heures_${anoText}_${selectMes.value}.pdf`);
+  });
+
+  // --- GRAVAÇÃO NO GITHUB ---
   btnSaveGithub.addEventListener('click', async () => {
     if (!githubToken) {
       alert("Configure o Token do GitHub antes de continuar.");
-      return;
-    }
-
-    if (registosMes.length === 0) {
-      alert("Operação cancelada: Não é possível gravar uma lista sem registos.");
       return;
     }
 
@@ -486,26 +449,17 @@
     try {
       exibirStatus("A guardar dados no GitHub...", "info");
 
-      // Obter o SHA do ficheiro existente para permitir a atualização
       let sha = "";
       const getRes = await fetch(apiUrl, {
         headers: { "Authorization": `token ${githubToken}` }
       });
-      
       if (getRes.ok) {
         const fileData = await getRes.json();
         sha = fileData.sha;
       }
 
-      // Preparação e codificação UTF-8 -> Base64
       const jsonContent = JSON.stringify(registosMes, null, 2);
       const contentEncoded = btoa(unescape(encodeURIComponent(jsonContent)));
-
-      const payload = {
-        message: `Mise à jour des heures: ${mes}/${ano}`,
-        content: contentEncoded,
-        sha: sha !== "" ? sha : undefined
-      };
 
       const putRes = await fetch(apiUrl, {
         method: "PUT",
@@ -513,7 +467,11 @@
           "Authorization": `token ${githubToken}`,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          message: `Mise à jour des heures: ${mes}/${ano}`,
+          content: contentEncoded,
+          sha: sha || undefined
+        })
       });
 
       if (putRes.ok) {
@@ -521,14 +479,11 @@
       } else {
         throw new Error(`Erro na gravação GitHub (${putRes.status})`);
       }
-
     } catch (err) {
-      console.error(err);
       exibirStatus(err.message, "error");
     }
   });
 
-  // --- GESTÃO DO TOKEN ---
   btnTokenGithub.addEventListener('click', () => {
     const input = prompt("Insira o seu Personal Access Token do GitHub:", githubToken);
     if (input !== null) {
@@ -539,8 +494,6 @@
   });
 
   btnCharger.addEventListener('click', carregarDados);
-
-  // Carregamento automático na abertura
   carregarDados();
 </script>
 </body>
