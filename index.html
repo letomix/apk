@@ -299,30 +299,26 @@
         const ano = document.getElementById('yearSelect').value;
         const mes = document.getElementById('monthSelect').value;
         
-        mostrarStatus(`Chargement ${mes}/${ano}...`, 'info');
+        mostrarStatus(`Chargement ${ano}/${mes}.json...`, 'info');
 
         // Burlar cache do navegador e do GitHub Pages
         const cacheBuster = `?t=${new Date().getTime()}`;
         
-        // Procura primeiro dentro da pasta do ano (ex: 2026/09.json) e depois na raiz (ex: 09.json)
-        const caminhos = [`${ano}/${mes}.json${cacheBuster}`, `${mes}.json${cacheBuster}`];
-        let carregado = false;
+        // Caminho fixo dentro da pasta do ano (ex: 2026/09.json)
+        const path = `${ano}/${mes}.json${cacheBuster}`;
 
-        for (let path of caminhos) {
-            try {
-                const res = await fetch(path, { cache: "no-store" });
-                if (res.ok) {
-                    registos = await res.json();
-                    carregado = true;
-                    mostrarStatus(`Données chargées (${mes}/${ano})`, 'success');
-                    break;
-                }
-            } catch (e) {}
-        }
-
-        if (!carregado) {
+        try {
+            const res = await fetch(path, { cache: "no-store" });
+            if (res.ok) {
+                registos = await res.json();
+                mostrarStatus(`Données chargées depuis ${ano}/${mes}.json`, 'success');
+            } else {
+                registos = [];
+                mostrarStatus(`Le fichier ${ano}/${mes}.json n'existe pas encore. Prêt à ajouter des données.`, 'info');
+            }
+        } catch (e) {
             registos = [];
-            mostrarStatus(`Aucun fichier trouvé pour ${mes}/${ano}. Vous pouvez ajouter de nouvelles données.`, 'info');
+            mostrarStatus(`Erreur de chargement de ${ano}/${mes}.json`, 'error');
         }
 
         renderizarTabela();
@@ -393,7 +389,7 @@
         const ano = document.getElementById('yearSelect').value;
         const mes = document.getElementById('monthSelect').value;
         
-        // Guarda na pasta do ano (ex: 2026/09.json)
+        // Grava estritamente dentro da pasta do ano (ex: 2026/09.json)
         const path = `${ano}/${mes}.json`;
 
         mostrarStatus(`Enregistrement sur GitHub (${path})...`, 'info');
