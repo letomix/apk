@@ -216,7 +216,7 @@
   </div>
 
   <div class="row" style="margin-bottom: 10px;">
-    <button type="button" class="btn-save" id="btnSaveGithub" disabled>☁️ Enregistrer</button>
+    <button type="button" class="btn-save" id="btnSaveGithub" disabled>☁️ Enregistrer sur GitHub</button>
     <button type="button" class="btn-pdf" id="btnExportPdf" disabled>📄 Exporter PDF</button>
   </div>
   
@@ -287,6 +287,53 @@
     statusMessage.className = `status-banner show ${tipo}`;
   }
 
+  // --- BUSCA DINÂMICA DE VALORES DENTRO DOS OBJETOS ---
+  function extrairValoresObjeto(item) {
+    let dateVal = '';
+    let lieuVal = '';
+    let heuresVal = '';
+
+    const keys = Object.keys(item);
+
+    //Procura campo da data
+    for (let k of keys) {
+      const lk = k.toLowerCase();
+      if (lk.includes('dat') || lk.includes('dia')) {
+        dateVal = item[k];
+        break;
+      }
+    }
+
+    // Procura campo do local/cliente
+    for (let k of keys) {
+      const lk = k.toLowerCase();
+      if (lk.includes('lieu') || lk.includes('client') || lk.includes('local') || lk.includes('ville')) {
+        lieuVal = item[k];
+        break;
+      }
+    }
+
+    // Procura campo das horas
+    for (let k of keys) {
+      const lk = k.toLowerCase();
+      if (lk.includes('heur') || lk.includes('hora') || lk.includes('time')) {
+        heuresVal = item[k];
+        break;
+      }
+    }
+
+    // Fallback por posição das chaves caso as palavras não coincidam
+    if (!dateVal && keys[0]) dateVal = item[keys[0]];
+    if (!lieuVal && keys[1]) lieuVal = item[keys[1]];
+    if (!heuresVal && keys[2]) heuresVal = item[keys[2]];
+
+    return {
+      date: dateVal || '-',
+      lieu: lieuVal || '-',
+      heures: heuresVal || '00:00'
+    };
+  }
+
   async function carregarDados() {
     const ano = selectAno.value;
     const mes = selectMes.value;
@@ -315,7 +362,6 @@
     }
   }
 
-  // --- RENDERIZAR TABELA (MAPEAMENTO CORRIGIDO) ---
   function renderizarTabela() {
     tableBody.innerHTML = '';
     let totalMinutos = 0;
@@ -334,18 +380,14 @@
     }
 
     registosMes.forEach((item, index) => {
-      // Verifica maiúsculas e minúsculas vindas do JSON
-      const valData = item.date || item.Date || item.data || item.Data || '-';
-      const valLieu = item.lieu || item.Lieu || item.client || item.Client || '-';
-      const valHeures = item.heures || item.Heures || item.horas || item.Horas || '00:00';
-
-      totalMinutos += parseTimeToMinutes(valHeures);
+      const extraido = extrairValoresObjeto(item);
+      totalMinutos += parseTimeToMinutes(extraido.heures);
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${valData}</td>
-        <td>${valLieu}</td>
-        <td>${valHeures}</td>
+        <td>${extraido.date}</td>
+        <td>${extraido.lieu}</td>
+        <td>${extraido.heures}</td>
         <td style="text-align: center;">
           <button type="button" class="btn-delete" onclick="removerRegisto(${index})">🗑️</button>
         </td>
@@ -401,11 +443,10 @@
     doc.setFont("helvetica", "bold");
     doc.text(`SUIVI DES HEURES ET DÉPLACEMENTS - ${nomeMesText.toUpperCase()} ${anoText}`, 14, 46);
 
-    const rows = registosMes.map(item => [
-      item.date || item.Date || item.data || item.Data || '-',
-      item.lieu || item.Lieu || item.client || item.Client || '-',
-      item.heures || item.Heures || item.horas || item.Horas || '00:00'
-    ]);
+    const rows = registosMes.map(item => {
+      const ext = extrairValoresObjeto(item);
+      return [ext.date, ext.lieu, ext.heures];
+    });
 
     doc.autoTable({
       startY: 52,
@@ -453,12 +494,15 @@
         sha = fileData.sha;
       }
 
-      // Padroniza as chaves para salvar tudo em minúsculas
-      const dadosPadronizados = registosMes.map(item => ({
-        date: item.date || item.Date || item.data || item.Data || '',
-        lieu: item.lieu || item.Lieu || item.client || item.Client || '',
-        heures: item.heures || item.Heures || item.horas || item.Horas || ''
-      }));
+      // Padroniza os dados para garantir que os salvamentos futuros sigam a estrutura date/lieu/heures
+      const dadosPadronizados = registosMes.map(item => {
+        const ext = extrairValoresObjeto(item);
+        return {
+          date: ext.date,
+          lieu: ext.lieu,
+          heures: ext.heures
+        };
+      });
 
       const jsonContent = JSON.stringify(dadosPadronizados, null, 2);
       const contentEncoded = btoa(unescape(encodeURIComponent(jsonContent)));
