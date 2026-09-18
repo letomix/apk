@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registo de Horas e Locais</title>
+    <title>Registo de Horas Online - JU CLEAN</title>
     <style>
         :root {
             --primary: #2563eb;
             --primary-hover: #1d4ed8;
-            --bg: #f8fafc;
+            --bg: #f1f5f9;
             --card-bg: #ffffff;
             --text: #0f172a;
-            --border: #e2e8f0;
+            --border: #cbd5e1;
             --danger: #ef4444;
             --success: #10b981;
         }
@@ -26,7 +26,7 @@
         body {
             background-color: var(--bg);
             color: var(--text);
-            padding: 20px;
+            padding: 12px;
             display: flex;
             justify-content: center;
         }
@@ -35,43 +35,39 @@
             width: 100%;
             max-width: 800px;
             background: var(--card-bg);
-            padding: 24px;
+            padding: 20px;
             border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
 
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
-            padding-bottom: 16px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
             border-bottom: 2px solid var(--border);
             flex-wrap: wrap;
             gap: 12px;
         }
 
         h1 {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             color: var(--text);
         }
 
-        .month-select-container {
+        .controls-head {
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
         select, input, button {
-            padding: 10px 14px;
-            border-radius: 6px;
+            padding: 10px 12px;
+            border-radius: 8px;
             border: 1px solid var(--border);
             font-size: 0.95rem;
             outline: none;
-        }
-
-        select:focus, input:focus {
-            border-color: var(--primary);
         }
 
         button {
@@ -80,40 +76,30 @@
             border: none;
             cursor: pointer;
             font-weight: 600;
-            transition: background-color 0.2s;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
+            transition: opacity 0.2s;
         }
 
-        button:hover {
-            background-color: var(--primary-hover);
+        button:active {
+            opacity: 0.8;
         }
 
-        button.danger {
-            background-color: var(--danger);
-        }
-
-        button.danger:hover {
-            background-color: #dc2626;
-        }
-
-        button.secondary {
-            background-color: #64748b;
-        }
-
-        button.secondary:hover {
-            background-color: #475569;
-        }
+        button.success { background-color: var(--success); }
+        button.danger { background-color: var(--danger); }
+        button.secondary { background-color: #64748b; }
 
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 12px;
-            margin-bottom: 24px;
-            background: #f1f5f9;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #f8fafc;
             padding: 16px;
             border-radius: 8px;
+            border: 1px solid var(--border);
         }
 
         .form-group {
@@ -123,14 +109,26 @@
         }
 
         .form-group label {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 600;
             color: #475569;
         }
 
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-weight: bold;
+        }
+
         .table-container {
             overflow-x: auto;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         table {
@@ -140,67 +138,53 @@
         }
 
         th, td {
-            padding: 12px;
+            padding: 12px 8px;
             border-bottom: 1px solid var(--border);
         }
 
         th {
-            background-color: #f8fafc;
-            font-weight: 600;
+            background-color: #f1f5f9;
             color: #475569;
+            font-size: 0.85rem;
         }
 
-        tr:hover {
-            background-color: #f8fafc;
-        }
-
-        .actions-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            padding-top: 16px;
-            border-top: 2px solid var(--border);
-        }
-
-        .total-badge {
-            background: #e0e7ff;
-            color: #3730a3;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 700;
-            font-size: 1.05rem;
-        }
-
-        .file-controls {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        #fileInput {
-            display: none;
-        }
-
-        .status-msg {
-            margin-bottom: 12px;
-            padding: 8px 12px;
+        .status-box {
+            padding: 10px;
             border-radius: 6px;
+            margin-bottom: 16px;
             font-size: 0.9rem;
             display: none;
         }
 
-        .status-msg.success {
-            background: #dcfce7;
-            color: #166534;
-            display: block;
+        .status-box.info { background: #dbeafe; color: #1e40af; display: block; }
+        .status-box.success { background: #dcfce7; color: #166534; display: block; }
+        .status-box.error { background: #fee2e2; color: #991b1b; display: block; }
+
+        .online-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 2px solid var(--border);
         }
 
-        .status-msg.error {
-            background: #fee2e2;
-            color: #991b1b;
-            display: block;
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 100%;
         }
     </style>
 </head>
@@ -209,28 +193,31 @@
 <div class="container">
     <header>
         <h1>Registo de Horas</h1>
-        <div class="month-select-container">
-            <label for="monthSelect"><strong>Mês:</strong></label>
-            <select id="monthSelect" onchange="carregarDoGithub()">
-                <option value="01">01 - Janeiro</option>
-                <option value="02">02 - Fevereiro</option>
-                <option value="03">03 - Março</option>
-                <option value="04">04 - Abril</option>
-                <option value="05">05 - Maio</option>
-                <option value="06">06 - Junho</option>
-                <option value="07">07 - Julho</option>
-                <option value="08" selected>08 - Agosto</option>
-                <option value="09">09 - Setembro</option>
-                <option value="10">10 - Outubro</option>
-                <option value="11">11 - Novembro</option>
-                <option value="12">12 - Dezembro</option>
+        <div class="controls-head">
+            <select id="yearSelect" onchange="carregarOnline()">
+                <option value="2026" selected>2026</option>
+                <option value="2025">2025</option>
+            </select>
+            <select id="monthSelect" onchange="carregarOnline()">
+                <option value="01">01 - Jan</option>
+                <option value="02">02 - Fev</option>
+                <option value="03">03 - Mar</option>
+                <option value="04">04 - Abr</option>
+                <option value="05">05 - Mai</option>
+                <option value="06">06 - Jun</option>
+                <option value="07">07 - Jul</option>
+                <option value="08" selected>08 - Ago</option>
+                <option value="09">09 - Set</option>
+                <option value="10">10 - Out</option>
+                <option value="11">11 - Nov</option>
+                <option value="12">12 - Dez</option>
             </select>
         </div>
     </header>
 
-    <div id="status" class="status-msg"></div>
+    <div id="statusBox" class="status-box"></div>
 
-    <!-- Form para Adicionar -->
+    <!-- Formulário para Adicionar -->
     <form id="addForm" onsubmit="adicionarRegisto(event)" class="form-grid">
         <div class="form-group">
             <label for="inputData">Data (dados)</label>
@@ -249,65 +236,93 @@
         </div>
     </form>
 
-    <!-- Tabela -->
+    <!-- Estatísticas -->
+    <div class="stats-bar">
+        <span>Total do Mês:</span>
+        <span id="totalBadge" style="font-size: 1.2rem;">00:00h</span>
+    </div>
+
+    <!-- Tabela de Dados -->
     <div class="table-container">
         <table>
             <thead>
                 <tr>
-                    <th>Data (dados)</th>
-                    <th>Local (local)</th>
-                    <th>Horas (horas)</th>
-                    <th style="width: 80px; text-align: center;">Ações</th>
+                    <th>Data</th>
+                    <th>Local</th>
+                    <th>Horas</th>
+                    <th style="text-align: center; width: 60px;">Ação</th>
                 </tr>
             </thead>
             <tbody id="tabelaCorpo">
-                <tr><td colspan="4" style="text-align:center;">A carregar dados...</td></tr>
+                <tr><td colspan="4" style="text-align:center;">A carregar dados online...</td></tr>
             </tbody>
         </table>
     </div>
 
-    <!-- Barra Inferior -->
-    <div class="actions-bar">
-        <div class="total-badge" id="totalBadge">Total: 00:00</div>
-        
-        <div class="file-controls">
-            <button type="button" class="secondary" onclick="document.getElementById('fileInput').click()">
-                📂 Abrir Ficheiro JSON
-            </button>
-            <input type="file" id="fileInput" accept=".json" onchange="carregarFicheiroManual(event)">
-            
-            <button type="button" onclick="guardarJson()">
-                💾 Guardar Ficheiro JSON
-            </button>
+    <!-- Botões Online para Telemóvel -->
+    <div class="online-actions">
+        <button type="button" class="success" style="flex: 2; padding: 12px;" onclick="guardarNoGithubDirecto()">
+            ☁️ Guardar Online no GitHub
+        </button>
+        <button type="button" class="secondary" style="flex: 1;" onclick="abrirModalConfig()">
+            ⚙️ Token
+        </button>
+    </div>
+</div>
+
+<!-- Modal para Configurar Token do GitHub -->
+<div id="modalToken" class="modal">
+    <div class="modal-content">
+        <h3 style="margin-bottom: 12px;">Acesso ao GitHub</h3>
+        <p style="font-size: 0.85rem; color: #475569; margin-bottom: 12px;">
+            Para guardar diretamente do telemóvel no GitHub sem descarregar ficheiros, insira o seu Personal Access Token do GitHub.
+        </p>
+        <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="width: 100%; margin-bottom: 12px;">
+        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+            <button type="button" class="secondary" onclick="fecharModalConfig()">Cancelar</button>
+            <button type="button" onclick="guardarToken()">Guardar Token</button>
         </div>
     </div>
 </div>
 
 <script>
+    const REPO = "letomix/apk";
     let registos = [];
 
-    // Define data padrão de hoje no input
+    // Coloca a data de hoje por defeito
     document.getElementById('inputData').valueAsDate = new Date();
 
-    // Carregar ficheiro JSON automaticamente do repositório (ex: 08.json)
-    async function carregarDoGithub() {
+    // 1. LEITURA AUTOMÁTICA DA RAIZ OU PASTA DO ANO
+    async function carregarOnline() {
+        const ano = document.getElementById('yearSelect').value;
         const mes = document.getElementById('monthSelect').value;
-        const ficheiro = `${mes}.json`;
-        mostrarStatus(`A tentar carregar ${ficheiro}...`, 'info');
+        
+        mostrarStatus(`A carregar dados de ${mes}/${ano}...`, 'info');
 
-        try {
-            const resposta = await fetch(ficheiro, { cache: "no-store" });
-            if (!resposta.ok) {
-                throw new Error(`Ficheiro ${ficheiro} não encontrado no repositório.`);
+        // Tenta primeiro na raiz (ex: 08.json) e depois na pasta do ano (ex: 2026/08.json)
+        const caminhos = [`${mes}.json`, `${ano}/${mes}.json`];
+        let carregado = false;
+
+        for (let path of caminhos) {
+            try {
+                const res = await fetch(path, { cache: "no-store" });
+                if (res.ok) {
+                    registos = await res.json();
+                    carregado = true;
+                    mostrarStatus(`Dados carregados online (${path})`, 'success');
+                    break;
+                }
+            } catch (e) {
+                // Continua para o próximo caminho
             }
-            registos = await resposta.json();
-            renderizarTabela();
-            mostrarStatus(`Ficheiro ${ficheiro} carregado com sucesso!`, 'success');
-        } catch (erro) {
-            registos = [];
-            renderizarTabela();
-            mostrarStatus(`Aviso: ${erro.message} (Pode adicionar novos dados e guardar).`, 'error');
         }
+
+        if (!carregado) {
+            registos = [];
+            mostrarStatus(`Aviso: Ficheiro ${mes}.json não encontrado online. Pode criar novos registos e guardar.`, 'error');
+        }
+
+        renderizarTabela();
     }
 
     function renderizarTabela() {
@@ -315,15 +330,14 @@
         tbody.innerHTML = '';
 
         if (registos.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum registo encontrado.</td></tr>';
-            document.getElementById('totalBadge').innerText = 'Total: 00:00';
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum registo neste mês.</td></tr>';
+            document.getElementById('totalBadge').innerText = '00:00h';
             return;
         }
 
         let totalMinutos = 0;
 
-        registos.forEach((item, index) => {
-            // Somar minutos
+        registos.forEach((item, idx) => {
             if (item.horas) {
                 const [h, m] = item.horas.split(':').map(Number);
                 totalMinutos += (h || 0) * 60 + (m || 0);
@@ -335,17 +349,15 @@
                 <td>${item.local || ''}</td>
                 <td>${item.horas || ''}</td>
                 <td style="text-align: center;">
-                    <button class="danger" style="padding: 4px 8px; font-size: 0.8rem;" onclick="eliminarRegisto(${index})">✕</button>
+                    <button class="danger" style="padding: 4px 8px; font-size: 0.8rem;" onclick="eliminarRegisto(${idx})">✕</button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
 
-        // Atualizar Total
-        const horasTotais = Math.floor(totalMinutos / 60);
-        const minsTotais = totalMinutos % 60;
-        const totalFormatado = `${String(horasTotais).padStart(2, '0')}:${String(minsTotais).padStart(2, '0')}`;
-        document.getElementById('totalBadge').innerText = `Total: ${totalFormatado}h`;
+        const hTotais = Math.floor(totalMinutos / 60);
+        const mTotais = totalMinutos % 60;
+        document.getElementById('totalBadge').innerText = `${String(hTotais).padStart(2, '0')}:${String(mTotais).padStart(2, '0')}h`;
     }
 
     function adicionarRegisto(e) {
@@ -357,60 +369,101 @@
         registos.push({ dados, local, horas });
         renderizarTabela();
 
-        // Limpar apenas local e horas
         document.getElementById('inputLocal').value = '';
         document.getElementById('inputHoras').value = '';
-        mostrarStatus('Registo adicionado à lista. Lembre-se de clicar em "Guardar Ficheiro JSON".', 'success');
+        mostrarStatus('Registo adicionado. Clique em "Guardar Online no GitHub".', 'info');
     }
 
-    function eliminarRegisto(index) {
-        registos.splice(index, 1);
+    function eliminarRegisto(idx) {
+        registos.splice(idx, 1);
         renderizarTabela();
     }
 
-    function guardarJson() {
+    // 2. ESCRITA DIRETA NO GITHUB VIA API (Ideal para telemóvel)
+    async function guardarNoGithubDirecto() {
+        const token = localStorage.getItem('gh_token');
+        if (!token) {
+            abrirModalConfig();
+            mostrarStatus('Configure o seu Token do GitHub para guardar diretamente no telemóvel.', 'error');
+            return;
+        }
+
+        const ano = document.getElementById('yearSelect').value;
         const mes = document.getElementById('monthSelect').value;
-        const nomeFicheiro = `${mes}.json`;
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(registos, null, 2));
-        
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", nomeFicheiro);
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
+        const path = `${mes}.json`;
 
-        mostrarStatus(`Ficheiro ${nomeFicheiro} descarregado! Suba-o para a raiz do seu GitHub para atualizar online.`, 'success');
-    }
+        mostrarStatus('A guardar diretamente no GitHub...', 'info');
 
-    function carregarFicheiroManual(event) {
-        const file = event.target.files[0];
-        if (!file) return;
+        try {
+            // Passo 1: Obter SHA do ficheiro existente
+            let sha = null;
+            const getRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${path}`, {
+                headers: { 'Authorization': `token ${token}` }
+            });
 
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                registos = JSON.parse(e.target.result);
-                renderizarTabela();
-                mostrarStatus(`Ficheiro ${file.name} carregado com sucesso!`, 'success');
-            } catch (err) {
-                mostrarStatus('Erro ao ler o ficheiro JSON. Verifique o formato.', 'error');
+            if (getRes.ok) {
+                const fileData = await getRes.json();
+                sha = fileData.sha;
             }
-        };
-        reader.readAsText(file);
+
+            // Passo 2: Fazer o Commit online
+            const jsonString = JSON.stringify(registos, null, 2);
+            const contentBase64 = btoa(unescape(encodeURIComponent(jsonString)));
+
+            const bodyData = {
+                message: `Atualização de ${mes}/${ano} via Web App`,
+                content: contentBase64,
+                branch: "main"
+            };
+            if (sha) bodyData.sha = sha;
+
+            const putRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${path}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(bodyData)
+            });
+
+            if (putRes.ok) {
+                mostrarStatus(`Guardado com sucesso no GitHub (${path})!`, 'success');
+            } else {
+                const err = await putRes.json();
+                throw new Error(err.message || 'Erro ao guardar');
+            }
+        } catch (e) {
+            mostrarStatus(`Erro ao guardar online: ${e.message}`, 'error');
+        }
     }
 
-    function mostrarStatus(mensagem, tipo) {
-        const el = document.getElementById('status');
-        el.innerText = mensagem;
-        el.className = `status-msg ${tipo}`;
-        setTimeout(() => {
-            if (el.innerText === mensagem) el.style.display = 'none';
-        }, 5000);
+    // Gestão do Token
+    function abrirModalConfig() {
+        document.getElementById('tokenInput').value = localStorage.getItem('gh_token') || '';
+        document.getElementById('modalToken').style.display = 'flex';
     }
 
-    // Carregar automaticamente ao abrir a página
-    window.onload = carregarDoGithub;
+    function fecharModalConfig() {
+        document.getElementById('modalToken').style.display = 'none';
+    }
+
+    function guardarToken() {
+        const val = document.getElementById('tokenInput').value.trim();
+        if (val) {
+            localStorage.setItem('gh_token', val);
+            mostrarStatus('Token guardado com sucesso!', 'success');
+        }
+        fecharModalConfig();
+    }
+
+    function mostrarStatus(msg, tipo) {
+        const box = document.getElementById('statusBox');
+        box.innerText = msg;
+        box.className = `status-box ${tipo}`;
+    }
+
+    // Carregamento automático ao abrir a página
+    window.onload = carregarOnline;
 </script>
 
 </body>
