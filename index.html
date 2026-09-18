@@ -1,194 +1,368 @@
+<!-- Icone e Fontes -->
+<link rel="icon" type="image/png" href="icone.png">
+<link rel="apple-touch-icon" href="icone.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- CSS Tailwind & React CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: {
+                    sans: ['Inter', 'sans-serif'],
+                },
+            }
+        }
+    }
+</script>
+<style>
+    body {
+        background-color: #0b0f19;
+        color: #f3f4f6;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #475569;
+    }
+</style>
+
+
 <script type="text/babel">
-    const { useState, useRef } = React;
+    const { useState, useEffect, useRef } = React;
 
     function App() {
         const [records, setRecords] = useState([]);
         const [modalOpen, setModalOpen] = useState(false);
-        const fileInputRef = useRef(null);
+        const [loading, setLoading] = useState(true);
+        const [loadStatus, setLoadStatus] = useState(null);
         
-        const currentMonthDefault = new Date().toISOString().slice(0, 7);
-        const [selectedMonth, setSelectedMonth] = useState(currentMonthDefault);
+        const fileInputRef = useRef(null);
+
+        // Seleção de ano e mês padrão
+        const now = new Date();
+        const defaultYear = now.getFullYear().toString();
+        const defaultMonth = String(now.getMonth() + 1).padStart(2, '0');
+
+        const [selectedYear, setSelectedYear] = useState(defaultYear);
+        const [selectedMonth, setSelectedMonth] = useState(defaultMonth);
 
         const [form, setForm] = useState({
-            date: new Date().toISOString().split('T')[0],
-            location: '',
-            hours: '',
-            overtime: '0'
+            dados: new Date().toISOString().split('T')[0],
+            local: '',
+            horas: '07:00',
+            horas_extras: '00:00'
         });
 
-        // Função para descarregar o ficheiro de texto automaticamente
-        const downloadTextFile = (dataToSave) => {
-            const dataString = JSON.stringify(dataToSave, null, 2);
-            const blob = new Blob([dataString], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.href = url;
-            downloadAnchor.download = `pedro_registo_horas.txt`;
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            document.body.removeChild(downloadAnchor);
-            URL.revokeObjectURL(url);
+        // Tentar carregar automaticamente o ficheiro JSON da raiz (ex: 08.json)
+        const fetchMonthJson = async (year, month) => {
+            setLoading(true);
+            setLoadStatus(null);
+            
+            // Tenta caminhos comuns na raiz do GitHub Pages
+            const filename = `${month}.json`;
+            const yearFolderFilename = `${year}/${month}.json`;
+
+            try {
+                let response = await fetch(filename);
+                if (!response.ok) {
+                    response = await fetch(yearFolderFilename);
+                }
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (Array.isArray(data)) {
+                        setRecords(data);
+                        setLoadStatus({ type: 'success', msg: `Ficheiro ${filename} carregado automaticamente da raiz!` });
+                    } else {
+                        setRecords([]);
+                        setLoadStatus({ type: 'error', msg: `Formato inválido no ficheiro ${filename}` });
+                    }
+                } else {
+                    setRecords([]);
+                    setLoadStatus({ type: 'info', msg: `Nenhum ficheiro ${filename} encontrado na raiz do GitHub.` });
+                }
+            } catch (err) {
+                setRecords([]);
+                setLoadStatus({ type: 'info', msg: `Servidor sem ficheiro ${filename} prévio.` });
+            } finally {
+                setLoading(false);
+            }
         };
 
+        useEffect(() => {
+            fetchMonthJson(selectedYear, selectedMonth);
+        }, [selectedYear, selectedMonth]);
+
+        // Auxiliar para converter formato "HH:MM" para minutos
+        const timeToMinutes = (timeStr) => {
+            if (!timeStr) return 0;
+            const [h, m] = timeStr.split(':').map(Number);
+            return (h || 0) * 60 + (m || 0);
+        };
+
+        // Auxiliar para converter minutos em string "HH:MM"
+        const minutesToTime = (totalMin) => {
+            const hours = Math.floor(totalMin / 60);
+            const mins = totalMin % 60;
+            return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+        };
+
+        // Adicionar novo registo
         const saveRecord = (e) => {
             e.preventDefault();
-            if (!form.location || !form.hours) return;
-            const newRecords = [ { id: Date.now(), ...form }, ...records ];
-            setRecords(newRecords);
-            downloadTextFile(newRecords);
+            if (!form.local || !form.horas) return;
+
+            const updatedRecords = [form, ...records];
+            // Ordenar por data mais recente
+            updatedRecords.sort((a, b) => new Date(b.dados) - new Date(a.dados));
+
+            setRecords(updatedRecords);
             setForm({
-                date: new Date().toISOString().split('T')[0],
-                location: '',
-                hours: '',
-                overtime: '0'
+                dados: `${selectedYear}-${selectedMonth}-${String(now.getDate()).padStart(2, '0')}`,
+                local: '',
+                horas: '07:00',
+                horas_extras: '00:00'
             });
             setModalOpen(false);
         };
 
-        const deleteRecord = (id) => {
-            const newRecords = records.filter(r => r.id !== id);
-            setRecords(newRecords);
-            downloadTextFile(newRecords);
+        // Eliminar um registo
+        const deleteRecord = (indexToDelete) => {
+            const updated = records.filter((_, idx) => idx !== indexToDelete);
+            setRecords(updated);
         };
 
-        const importFromFile = (e) => {
-            const fileReader = new FileReader();
-            if (e.target.files && e.target.files[0]) {
-                fileReader.readAsText(e.target.files[0], "UTF-8");
-                fileReader.onload = (event) => {
-                    try {
-                        const importedRecords = JSON.parse(event.target.result);
-                        if (Array.isArray(importedRecords)) {
-                            setRecords(importedRecords);
-                            alert("Dados carregados com sucesso a partir do ficheiro!");
-                        } else {
-                            alert("Formato de ficheiro inválido.");
-                        }
-                    } catch (error) {
-                        alert("Erro ao ler o ficheiro de texto.");
+        // Descarregar ficheiro JSON atualizado para depois subir ao GitHub
+        const downloadJsonFile = () => {
+            const jsonString = JSON.stringify(records, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${selectedMonth}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
+        // Importar manualmente um ficheiro JSON local
+        const handleFileUpload = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const parsed = JSON.parse(event.target.result);
+                    if (Array.isArray(parsed)) {
+                        setRecords(parsed);
+                        setLoadStatus({ type: 'success', msg: `Ficheiro ${file.name} importado com sucesso!` });
+                    } else {
+                        alert('O ficheiro JSON não contém uma lista válida.');
                     }
-                };
-            }
+                } catch (err) {
+                    alert('Erro ao processar o ficheiro JSON.');
+                }
+            };
+            reader.readAsText(file);
         };
 
-        const filteredRecords = records.filter(r => {
-            const recordMonth = r.date ? r.date.slice(0, 7) : '';
-            return recordMonth === selectedMonth;
-        });
-
-        const totalHours = filteredRecords.reduce((acc, curr) => acc + (parseFloat(curr.hours) || 0), 0);
-        const totalOvertime = filteredRecords.reduce((acc, curr) => acc + (parseFloat(curr.overtime) || 0), 0);
+        // Cálculos Totais do Mês
+        const totalMinutesNormal = records.reduce((acc, curr) => acc + timeToMinutes(curr.horas), 0);
+        const totalMinutesExtras = records.reduce((acc, curr) => acc + timeToMinutes(curr.horas_extras), 0);
 
         return (
-            <div className="flex-1 flex flex-col max-w-4xl w-full mx-auto p-4 md:p-6">
-                <header className="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900/85 backdrop-blur border border-slate-800 rounded-2xl p-6 mb-6 shadow-xl gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-cyan-500/10 p-3 rounded-xl border border-cyan-500/20 text-cyan-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <div className="flex-1 flex flex-col max-w-5xl w-full mx-auto p-4 md:p-8">
+                
+                <!-- Header -->
+                <header className="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900/90 border border-slate-800 rounded-3xl p-6 mb-6 shadow-2xl backdrop-blur-lg gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="bg-gradient-to-tr from-cyan-500 to-blue-600 p-3.5 rounded-2xl text-slate-950 font-black shadow-lg shadow-cyan-500/20">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                                Pedro <span className="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-500/30">Horas</span>
+                            <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
+                                Pedro
+                                <span className="text-xs font-semibold bg-cyan-500/10 text-cyan-400 px-3 py-1 rounded-full border border-cyan-500/20 tracking-wide uppercase">
+                                    Registo de Horas
+                                </span>
                             </h1>
-                            <p className="text-slate-400 text-sm">Registo de Dias, Vila, Horas e Horas Extras</p>
+                            <p className="text-slate-400 text-sm mt-0.5">Gestão simples de deslocações e horas de trabalho</p>
                         </div>
                     </div>
-                    <div className="flex flex-wrap gap-2 w-full md:w-auto">
+
+                    <!-- Botões de Ação na Header -->
+                    <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
                         <button 
                             onClick={() => fileInputRef.current && fileInputRef.current.click()}
-                            className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium px-4 py-2.5 rounded-xl border border-slate-700 transition-all flex items-center gap-2 cursor-pointer text-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                            Carregar Ficheiro
+                            className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold px-4 py-2.5 rounded-xl border border-slate-700 transition-all flex items-center gap-2 text-sm cursor-pointer shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            Abrir JSON
                         </button>
                         <input 
                             type="file" 
                             ref={fileInputRef} 
-                            onChange={importFromFile} 
-                            accept=".txt,.json" 
+                            onChange={handleFileUpload} 
+                            accept=".json" 
                             className="hidden" 
                         />
+
                         <button 
                             onClick={() => setModalOpen(true)}
-                            className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-medium px-5 py-2.5 rounded-xl shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-2 cursor-pointer flex-1 md:flex-none justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                            Adicionar Registo
+                            className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 text-sm cursor-pointer shadow-lg shadow-cyan-500/25">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Novo Registo
                         </button>
                     </div>
                 </header>
 
-                {records.length === 0 && (
-                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 mb-6 text-amber-200 text-sm flex items-center gap-3">
-                        <span className="text-xl">ℹ️</span>
-                        <div>
-                            Para recuperar os dados guardados, clique em <strong className="text-white">"Carregar Ficheiro"</strong> e selecione o seu ficheiro de texto. Para criar novos dados, clique em <strong className="text-white">"Adicionar Registo"</strong>.
-                        </div>
+                <!-- Feedback Status / Alertas -->
+                {loadStatus && (
+                    <div className={`text-xs px-4 py-3 rounded-2xl mb-6 border flex items-center justify-between ${
+                        loadStatus.type === 'success' 
+                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+                            : loadStatus.type === 'error' 
+                            ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' 
+                            : 'bg-slate-800/80 border-slate-700 text-slate-300'
+                    }`}>
+                        <span className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-current"></span>
+                            {loadStatus.msg}
+                        </span>
+                        <button onClick={() => setLoadStatus(null)} className="text-slate-400 hover:text-white font-bold ml-4">✕</button>
                     </div>
                 )}
 
-                <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="flex items-center gap-3 w-full md:w-auto">
-                        <label className="text-sm font-medium text-slate-300">Mês:</label>
-                        <input 
-                            type="month" 
-                            value={selectedMonth} 
-                            onChange={e => setSelectedMonth(e.target.value)}
-                            className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500" 
-                        />
+                <!-- Controls & Summary Bar -->
+                <div className="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 mb-6 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-5 shadow-xl backdrop-blur-md">
+                    
+                    <!-- Seletor de Mês / Ano -->
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center bg-slate-950 border border-slate-800 rounded-2xl p-1.5">
+                            <span className="text-xs text-slate-400 font-medium px-3">Período:</span>
+                            <select 
+                                value={selectedYear} 
+                                onChange={(e) => setSelectedYear(e.target.value)}
+                                className="bg-slate-900 text-white text-sm font-semibold rounded-xl px-3 py-1.5 focus:outline-none border border-slate-800 cursor-pointer">
+                                <option value="2025">2025</option>
+                                <option value="2026">2026</option>
+                                <option value="2027">2027</option>
+                            </select>
+                            <span className="text-slate-600 px-1">/</span>
+                            <select 
+                                value={selectedMonth} 
+                                onChange={(e) => setSelectedMonth(e.target.value)}
+                                className="bg-slate-900 text-cyan-400 text-sm font-bold rounded-xl px-3 py-1.5 focus:outline-none border border-slate-800 cursor-pointer">
+                                <option value="01">01 (Jan)</option>
+                                <option value="02">02 (Fev)</option>
+                                <option value="03">03 (Mar)</option>
+                                <option value="04">04 (Abr)</option>
+                                <option value="05">05 (Mai)</option>
+                                <option value="06">06 (Jun)</option>
+                                <option value="07">07 (Jul)</option>
+                                <option value="08">08 (Ago)</option>
+                                <option value="09">09 (Set)</option>
+                                <option value="10">10 (Out)</option>
+                                <option value="11">11 (Nov)</option>
+                                <option value="12">12 (Dez)</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div className="flex gap-4 text-sm w-full md:w-auto justify-end">
-                        <div className="bg-slate-950 px-3.5 py-2 rounded-xl border border-slate-800">
-                            <span className="text-slate-400 text-xs block">Total Horas</span>
-                            <span className="text-cyan-400 font-bold text-base">{totalHours} h</span>
+                    <!-- Resumo Totais -->
+                    <div className="flex items-center gap-4">
+                        <div className="bg-slate-950 border border-slate-800 px-4 py-2.5 rounded-2xl flex-1 md:flex-none">
+                            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Horas Normais</span>
+                            <span className="text-xl font-extrabold text-cyan-400 tracking-tight">{minutesToTime(totalMinutesNormal)} h</span>
                         </div>
-                        <div className="bg-slate-950 px-3.5 py-2 rounded-xl border border-slate-800">
-                            <span className="text-slate-400 text-xs block">Total Extras</span>
-                            <span className="text-amber-400 font-bold text-base">{totalOvertime} h</span>
+                        <div className="bg-slate-950 border border-slate-800 px-4 py-2.5 rounded-2xl flex-1 md:flex-none">
+                            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Horas Extras</span>
+                            <span className="text-xl font-extrabold text-amber-400 tracking-tight">+{minutesToTime(totalMinutesExtras)} h</span>
                         </div>
+                        <button 
+                            onClick={downloadJsonFile}
+                            title="Descarregar ficheiro JSON atualizado"
+                            className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold px-4 py-3 rounded-2xl transition-all flex items-center justify-center gap-2 text-xs shadow-lg shadow-emerald-500/15 cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            <span className="hidden sm:inline">Guardar</span> {selectedMonth}.json
+                        </button>
                     </div>
                 </div>
 
+                <!-- Listagem de Registos -->
                 <div className="flex-1 space-y-3">
-                    <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                        Registos de {selectedMonth} ({filteredRecords.length})
-                    </h2>
+                    <div className="flex items-center justify-between px-2 mb-1">
+                        <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            Registos Encontrados ({records.length})
+                        </h2>
+                        <span className="text-xs text-slate-500">Ficheiro activo: <code className="text-cyan-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">{selectedMonth}.json</code></span>
+                    </div>
 
-                    {filteredRecords.length === 0 ? (
-                        <div className="text-center py-16 bg-slate-900/40 border border-slate-800 rounded-2xl">
-                            <p className="text-slate-500">Nenhum registo encontrado para este mês.</p>
+                    {loading ? (
+                        <div className="text-center py-20 bg-slate-900/30 border border-slate-800/50 rounded-3xl">
+                            <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-cyan-500 border-t-transparent mb-3"></div>
+                            <p className="text-slate-400 text-sm">A carregar registos...</p>
+                        </div>
+                    ) : records.length === 0 ? (
+                        <div className="text-center py-20 bg-slate-900/30 border border-slate-800/50 rounded-3xl">
+                            <p className="text-slate-400 font-medium">Nenhum registo disponível para o mês {selectedMonth}/{selectedYear}.</p>
+                            <p className="text-xs text-slate-600 mt-1">Clique em "Novo Registo" ou carregue um ficheiro JSON.</p>
                         </div>
                     ) : (
-                        filteredRecords.map(item => (
-                            <div key={item.id} className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:border-slate-700 transition-all">
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-sm text-cyan-300 font-medium bg-cyan-500/10 px-2.5 py-0.5 rounded-md border border-cyan-500/20">
-                                            📅 {item.date}
-                                        </span>
-                                        {item.location && (
-                                            <span className="text-sm bg-slate-800 text-slate-200 px-2.5 py-0.5 rounded-md font-semibold">
-                                                📍 {item.location}
-                                            </span>
-                                        )}
+                        records.map((item, index) => (
+                            <div 
+                                key={index} 
+                                className="bg-slate-900/70 border border-slate-800/80 hover:border-slate-700/80 rounded-2xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all duration-200 group">
+                                
+                                <div className="flex items-center gap-4">
+                                    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center min-w-[100px]">
+                                        <span className="text-xs text-slate-400 block font-medium">Data</span>
+                                        <span className="text-sm font-bold text-cyan-300">{item.dados}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-xs text-slate-500 uppercase tracking-wider block font-semibold">Vila / Local</span>
+                                        <span className="text-lg font-bold text-white capitalize">{item.local || '—'}</span>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-                                    <div className="text-right flex gap-3">
-                                        <div className="bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
-                                            <span className="text-[10px] text-slate-500 block">Horas</span>
-                                            <span className="text-cyan-400 font-bold">{item.hours} h</span>
+
+                                <div className="flex items-center gap-5 w-full md:w-auto justify-between md:justify-end border-t border-slate-800/60 md:border-t-0 pt-3 md:pt-0">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-slate-950 px-3.5 py-1.5 rounded-xl border border-slate-800">
+                                            <span className="text-[10px] text-slate-400 block font-medium">Horas</span>
+                                            <span className="text-cyan-400 font-extrabold text-sm">{item.horas} h</span>
                                         </div>
-                                        {parseFloat(item.overtime) > 0 && (
-                                            <div className="bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
-                                                <span className="text-[10px] text-slate-500 block">Extras</span>
-                                                <span className="text-amber-400 font-bold">+{item.overtime} h</span>
+                                        {item.horas_extras && item.horas_extras !== "00:00" && (
+                                            <div className="bg-slate-950 px-3.5 py-1.5 rounded-xl border border-slate-800">
+                                                <span className="text-[10px] text-slate-400 block font-medium">Extras</span>
+                                                <span className="text-amber-400 font-extrabold text-sm">+{item.horas_extras} h</span>
                                             </div>
                                         )}
                                     </div>
+
                                     <button 
-                                        onClick={() => deleteRecord(item.id)}
-                                        className="text-slate-500 hover:text-red-400 p-2 transition-colors cursor-pointer text-lg font-bold" title="Eliminar">
-                                        ✕
+                                        onClick={() => deleteRecord(index)}
+                                        className="text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 p-2 rounded-xl transition-all cursor-pointer"
+                                        title="Eliminar registo">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                     </button>
                                 </div>
                             </div>
@@ -196,65 +370,71 @@
                     )}
                 </div>
 
+                <!-- Modal para Adicionar Entradas -->
                 {modalOpen && (
-                    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                        <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-                            <h3 className="text-xl font-bold text-white mb-4">Adicionar Horas</h3>
+                    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+                        <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative animate-in fade-in zoom-in duration-150">
+                            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                                <span>Adicionar Horas</span>
+                            </h3>
+
                             <form onSubmit={saveRecord} className="space-y-4">
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-400 mb-1">Data (Dia)</label>
+                                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">Data (dados)</label>
                                     <input 
                                         type="date" 
-                                        value={form.date} 
-                                        onChange={e => setForm({...form, date: e.target.value})}
+                                        required
+                                        value={form.dados} 
+                                        onChange={e => setForm({...form, dados: e.target.value})}
                                         className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" 
                                     />
                                 </div>
+
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-400 mb-1">Vila / Local</label>
+                                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">Vila / Local (local)</label>
                                     <input 
                                         type="text" 
-                                        placeholder="Ex: Yffiniac" 
-                                        value={form.location} 
-                                        onChange={e => setForm({...form, location: e.target.value})}
+                                        required
+                                        placeholder="Ex: Quimper, Yffiniac..." 
+                                        value={form.local} 
+                                        onChange={e => setForm({...form, local: e.target.value})}
                                         className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" 
                                     />
                                 </div>
+
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-400 mb-1">Horas</label>
+                                        <label className="block text-xs font-semibold text-slate-300 mb-1.5">Horas (horas)</label>
                                         <input 
-                                            type="number" 
-                                            step="0.5" 
-                                            placeholder="Ex: 7" 
-                                            value={form.hours} 
-                                            onChange={e => setForm({...form, hours: e.target.value})}
+                                            type="time" 
+                                            required
+                                            value={form.horas} 
+                                            onChange={e => setForm({...form, horas: e.target.value})}
                                             className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" 
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-400 mb-1">Horas Extras</label>
+                                        <label className="block text-xs font-semibold text-slate-300 mb-1.5">Horas Extras</label>
                                         <input 
-                                            type="number" 
-                                            step="0.5" 
-                                            placeholder="Ex: 2" 
-                                            value={form.overtime} 
-                                            onChange={e => setForm({...form, overtime: e.target.value})}
+                                            type="time" 
+                                            value={form.horas_extras} 
+                                            onChange={e => setForm({...form, horas_extras: e.target.value})}
                                             className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" 
                                         />
                                     </div>
                                 </div>
-                                <div className="flex justify-end gap-3 pt-2">
+
+                                <div className="flex justify-end gap-3 pt-3">
                                     <button 
                                         type="button" 
                                         onClick={() => setModalOpen(false)}
-                                        className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-sm font-medium hover:bg-slate-700 cursor-pointer">
+                                        className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-sm font-semibold hover:bg-slate-700 cursor-pointer">
                                         Cancelar
                                     </button>
                                     <button 
                                         type="submit" 
                                         className="px-5 py-2.5 rounded-xl bg-cyan-500 text-slate-950 text-sm font-bold hover:bg-cyan-400 cursor-pointer shadow-lg shadow-cyan-500/20">
-                                        Guardar
+                                        Adicionar Registo
                                     </button>
                                 </div>
                             </form>
@@ -265,7 +445,6 @@
         );
     }
 
-    // Método atualizado compatível com React 18 no GitHub Pages
     const container = document.getElementById('root');
     const root = ReactDOM.createRoot(container);
     root.render(<App />);
