@@ -8,12 +8,12 @@
         :root {
             --primary: #2563eb;
             --primary-hover: #1d4ed8;
-            --bg: #f1f5f9;
+            --bg: #f8fafc;
             --card-bg: #ffffff;
             --text: #0f172a;
             --border: #cbd5e1;
-            --danger: #ef4444;
-            --success: #10b981;
+            --danger: #dc2626;
+            --success: #16a34a;
         }
 
         * {
@@ -82,19 +82,19 @@
             gap: 6px;
         }
 
+        button:hover { background-color: var(--primary-hover); }
         button.success { background-color: var(--success); }
         button.danger { background-color: var(--danger); }
         button.secondary { background-color: #64748b; }
 
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
             gap: 10px;
             margin-bottom: 20px;
-            background: #f8fafc;
+            background: #f1f5f9;
             padding: 16px;
             border-radius: 8px;
-            border: 1px solid var(--border);
         }
 
         .form-group {
@@ -144,12 +144,11 @@
         }
 
         .status-box {
-            padding: 12px;
+            padding: 10px;
             border-radius: 6px;
             margin-bottom: 16px;
             font-size: 0.9rem;
             display: none;
-            word-break: break-word;
         }
 
         .status-box.info { background: #dbeafe; color: #1e40af; display: block; }
@@ -191,29 +190,30 @@
         <h1>Suivi des heures et déplacements</h1>
         <div class="controls-head">
             <select id="yearSelect" onchange="carregarOnline()">
-                <option value="2026" selected>2026</option>
+                <option value="2026">2026</option>
                 <option value="2025">2025</option>
             </select>
             <select id="monthSelect" onchange="carregarOnline()">
-                <option value="01">01 - Jan</option>
-                <option value="02">02 - Fév</option>
-                <option value="03">03 - Mar</option>
-                <option value="04">04 - Avr</option>
+                <option value="01">01 - Janvier</option>
+                <option value="02">02 - Février</option>
+                <option value="03">03 - Mars</option>
+                <option value="04">04 - Avril</option>
                 <option value="05">05 - Mai</option>
                 <option value="06">06 - Juin</option>
-                <option value="07">07 - Juil</option>
-                <option value="08" selected>08 - Août</option>
-                <option value="09">09 - Sept</option>
-                <option value="10">10 - Oct</option>
-                <option value="11">11 - Nov</option>
-                <option value="12">12 - Déc</option>
+                <option value="07">07 - Juillet</option>
+                <option value="08">08 - Août</option>
+                <option value="09">09 - Septembre</option>
+                <option value="10">10 - Octobre</option>
+                <option value="11">11 - Novembre</option>
+                <option value="12">12 - Décembre</option>
             </select>
+            <button type="button" class="secondary" onclick="carregarOnline()">🔍 Charger</button>
         </div>
     </header>
 
     <div id="statusBox" class="status-box"></div>
 
-    <!-- Formulaire -->
+    <!-- Formulaire d'ajout -->
     <form id="addForm" onsubmit="adicionarRegisto(event)" class="form-grid">
         <div class="form-group">
             <label for="inputData">Date (dados)</label>
@@ -232,7 +232,7 @@
         </div>
     </form>
 
-    <!-- Statistiques -->
+    <!-- Total -->
     <div class="stats-bar">
         <span>Total des Heures:</span>
         <span id="totalBadge" style="font-size: 1.2rem;">00:00h</span>
@@ -250,12 +250,12 @@
                 </tr>
             </thead>
             <tbody id="tabelaCorpo">
-                <tr><td colspan="4" style="text-align:center;">Chargement...</td></tr>
+                <tr><td colspan="4" style="text-align:center;">Chargement des données...</td></tr>
             </tbody>
         </table>
     </div>
 
-    <!-- Actions Online -->
+    <!-- Actions GitHub -->
     <div class="online-actions">
         <button type="button" class="success" style="flex: 2; padding: 12px;" onclick="guardarNoGithubDirecto()">
             ☁️ Enregistrer sur GitHub
@@ -271,12 +271,12 @@
     <div class="modal-content">
         <h3 style="margin-bottom: 12px;">Accès GitHub</h3>
         <p style="font-size: 0.85rem; color: #475569; margin-bottom: 12px;">
-            Collez votre Personal Access Token (ghp_...) pour sauvegarder directement depuis le téléphone.
+            Entrez votre Personal Access Token GitHub pour enregistrer directement.
         </p>
         <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="width: 100%; margin-bottom: 12px;">
         <div style="display: flex; gap: 8px; justify-content: flex-end;">
             <button type="button" class="secondary" onclick="fecharModalConfig()">Annuler</button>
-            <button type="button" onclick="guardarToken()">Enregistrer le Token</button>
+            <button type="button" onclick="guardarToken()">Sauvegarder Token</button>
         </div>
     </div>
 </div>
@@ -285,27 +285,44 @@
     const REPO = "letomix/apk";
     let registos = [];
 
-    document.getElementById('inputData').valueAsDate = new Date();
+    // Inicializar data, mês e ano atuais
+    const hoje = new Date();
+    document.getElementById('inputData').valueAsDate = hoje;
+    
+    const anoAtual = String(hoje.getFullYear());
+    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+    
+    document.getElementById('yearSelect').value = anoAtual;
+    document.getElementById('monthSelect').value = mesAtual;
 
     async function carregarOnline() {
         const ano = document.getElementById('yearSelect').value;
         const mes = document.getElementById('monthSelect').value;
-        const path = `${mes}.json`;
+        
+        mostrarStatus(`Chargement ${mes}/${ano}...`, 'info');
 
-        mostrarStatus(`Chargement de ${path}...`, 'info');
+        // Burlar cache do navegador e do GitHub Pages
+        const cacheBuster = `?t=${new Date().getTime()}`;
+        
+        // Procura primeiro dentro da pasta do ano (ex: 2026/09.json) e depois na raiz (ex: 09.json)
+        const caminhos = [`${ano}/${mes}.json${cacheBuster}`, `${mes}.json${cacheBuster}`];
+        let carregado = false;
 
-        try {
-            const res = await fetch(`${path}?t=${Date.now()}`, { cache: "no-store" });
-            if (res.ok) {
-                registos = await res.json();
-                mostrarStatus(`Fichier ${path} chargé avec succès!`, 'success');
-            } else {
-                registos = [];
-                mostrarStatus(`Fichier ${path} introuvable sur la racine du GitHub.`, 'error');
-            }
-        } catch (e) {
+        for (let path of caminhos) {
+            try {
+                const res = await fetch(path, { cache: "no-store" });
+                if (res.ok) {
+                    registos = await res.json();
+                    carregado = true;
+                    mostrarStatus(`Données chargées (${mes}/${ano})`, 'success');
+                    break;
+                }
+            } catch (e) {}
+        }
+
+        if (!carregado) {
             registos = [];
-            mostrarStatus(`Erreur de connexion lors du chargement.`, 'error');
+            mostrarStatus(`Aucun fichier trouvé pour ${mes}/${ano}. Vous pouvez ajouter de nouvelles données.`, 'info');
         }
 
         renderizarTabela();
@@ -316,7 +333,7 @@
         tbody.innerHTML = '';
 
         if (registos.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Aucun enregistrement.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Aucun enregistrement pour ce mois.</td></tr>';
             document.getElementById('totalBadge').innerText = '00:00h';
             return;
         }
@@ -357,7 +374,7 @@
 
         document.getElementById('inputLocal').value = '';
         document.getElementById('inputHoras').value = '';
-        mostrarStatus('Enregistré localement. Cliquez sur "Enregistrer sur GitHub".', 'info');
+        mostrarStatus('Enregistrement ajouté. N\'oubliez pas de cliquer sur "Enregistrer sur GitHub".', 'info');
     }
 
     function eliminarRegisto(idx) {
@@ -366,46 +383,37 @@
     }
 
     async function guardarNoGithubDirecto() {
-        let token = localStorage.getItem('gh_token');
-        if (token) token = token.trim();
-
+        const token = localStorage.getItem('gh_token');
         if (!token) {
             abrirModalConfig();
-            mostrarStatus('Veuillez d\'abord configurer votre Token GitHub.', 'error');
+            mostrarStatus('Veuillez configurer votre Token GitHub.', 'error');
             return;
         }
 
+        const ano = document.getElementById('yearSelect').value;
         const mes = document.getElementById('monthSelect').value;
-        const path = `${mes}.json`;
+        
+        // Guarda na pasta do ano (ex: 2026/09.json)
+        const path = `${ano}/${mes}.json`;
 
-        mostrarStatus('Enregistrement sur GitHub en cours...', 'info');
+        mostrarStatus(`Enregistrement sur GitHub (${path})...`, 'info');
 
         try {
-            // 1. Obtenir le SHA du fichier existant
             let sha = null;
-            const getRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${path}?t=${Date.now()}`, {
-                headers: { 
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
+            const getRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${path}`, {
+                headers: { 'Authorization': `token ${token}` }
             });
 
             if (getRes.ok) {
                 const fileData = await getRes.json();
                 sha = fileData.sha;
-            } else if (getRes.status === 401) {
-                throw new Error("Token invalide ou expiré (401 Bad Credentials).");
-            } else if (getRes.status === 403) {
-                throw new Error("Le Token n'a pas les permissions requises (Cochez 'repo').");
             }
 
-            // 2. Commit vers GitHub
             const jsonString = JSON.stringify(registos, null, 2);
-            // Conversion UTF-8 vers Base64 sécurisée pour accents/caractères spéciaux
             const contentBase64 = btoa(unescape(encodeURIComponent(jsonString)));
 
             const bodyData = {
-                message: `Mise à jour de ${path} via Web App`,
+                message: `Mise à jour ${path} via Web App`,
                 content: contentBase64,
                 branch: "main"
             };
@@ -414,21 +422,21 @@
             const putRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${path}`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/vnd.github.v3+json'
+                    'Authorization': `token ${token}`,
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(bodyData)
             });
 
             if (putRes.ok) {
-                mostrarStatus(`✅ Fichier ${path} sauvegardé avec succès sur GitHub!`, 'success');
+                mostrarStatus(`Enregistré avec succès sur GitHub (${path}) !`, 'success');
+                setTimeout(carregarOnline, 1000);
             } else {
-                const errData = await putRes.json();
-                throw new Error(errData.message || `Erreur HTTP ${putRes.status}`);
+                const err = await putRes.json();
+                throw new Error(err.message || 'Erreur lors de l\'enregistrement');
             }
         } catch (e) {
-            mostrarStatus(`❌ Erreur lors de la sauvegarde: ${e.message}`, 'error');
+            mostrarStatus(`Erreur : ${e.message}`, 'error');
         }
     }
 
@@ -445,7 +453,7 @@
         const val = document.getElementById('tokenInput').value.trim();
         if (val) {
             localStorage.setItem('gh_token', val);
-            mostrarStatus('Token enregistré avec succès!', 'success');
+            mostrarStatus('Token sauvegardé !', 'success');
         }
         fecharModalConfig();
     }
