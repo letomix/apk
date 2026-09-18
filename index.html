@@ -1,451 +1,417 @@
-<!-- Icone e Fontes -->
-<link rel="icon" type="image/png" href="icone.png">
-<link rel="apple-touch-icon" href="icone.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registo de Horas e Locais</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
 
-<!-- CSS Tailwind & React CDN -->
-<script src="https://cdn.tailwindcss.com"></script>
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: var(--text);
+        }
+
+        .month-select-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        select, input, button {
+            padding: 10px 14px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--primary);
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button.danger {
+            background-color: var(--danger);
+        }
+
+        button.danger:hover {
+            background-color: #dc2626;
+        }
+
+        button.secondary {
+            background-color: #64748b;
+        }
+
+        button.secondary:hover {
+            background-color: #475569;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+            background: #f1f5f9;
+            padding: 16px;
+            border-radius: 8px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 24px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding-top: 16px;
+            border-top: 2px solid var(--border);
+        }
+
+        .total-badge {
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 1.05rem;
+        }
+
+        .file-controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .status-msg {
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .status-msg.success {
+            background: #dcfce7;
+            color: #166534;
+            display: block;
+        }
+
+        .status-msg.error {
+            background: #fee2e2;
+            color: #991b1b;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Registo de Horas</h1>
+        <div class="month-select-container">
+            <label for="monthSelect"><strong>Mês:</strong></label>
+            <select id="monthSelect" onchange="carregarDoGithub()">
+                <option value="01">01 - Janeiro</option>
+                <option value="02">02 - Fevereiro</option>
+                <option value="03">03 - Março</option>
+                <option value="04">04 - Abril</option>
+                <option value="05">05 - Maio</option>
+                <option value="06">06 - Junho</option>
+                <option value="07">07 - Julho</option>
+                <option value="08" selected>08 - Agosto</option>
+                <option value="09">09 - Setembro</option>
+                <option value="10">10 - Outubro</option>
+                <option value="11">11 - Novembro</option>
+                <option value="12">12 - Dezembro</option>
+            </select>
+        </div>
+    </header>
+
+    <div id="status" class="status-msg"></div>
+
+    <!-- Form para Adicionar -->
+    <form id="addForm" onsubmit="adicionarRegisto(event)" class="form-grid">
+        <div class="form-group">
+            <label for="inputData">Data (dados)</label>
+            <input type="date" id="inputData" required>
+        </div>
+        <div class="form-group">
+            <label for="inputLocal">Local (local)</label>
+            <input type="text" id="inputLocal" placeholder="Ex: quimper" required>
+        </div>
+        <div class="form-group">
+            <label for="inputHoras">Horas (horas)</label>
+            <input type="time" id="inputHoras" required>
+        </div>
+        <div class="form-group" style="justify-content: flex-end;">
+            <button type="submit">+ Adicionar</button>
+        </div>
+    </form>
+
+    <!-- Tabela -->
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Data (dados)</th>
+                    <th>Local (local)</th>
+                    <th>Horas (horas)</th>
+                    <th style="width: 80px; text-align: center;">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaCorpo">
+                <tr><td colspan="4" style="text-align:center;">A carregar dados...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Barra Inferior -->
+    <div class="actions-bar">
+        <div class="total-badge" id="totalBadge">Total: 00:00</div>
+        
+        <div class="file-controls">
+            <button type="button" class="secondary" onclick="document.getElementById('fileInput').click()">
+                📂 Abrir Ficheiro JSON
+            </button>
+            <input type="file" id="fileInput" accept=".json" onchange="carregarFicheiroManual(event)">
+            
+            <button type="button" onclick="guardarJson()">
+                💾 Guardar Ficheiro JSON
+            </button>
+        </div>
+    </div>
+</div>
 
 <script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                fontFamily: {
-                    sans: ['Inter', 'sans-serif'],
-                },
+    let registos = [];
+
+    // Define data padrão de hoje no input
+    document.getElementById('inputData').valueAsDate = new Date();
+
+    // Carregar ficheiro JSON automaticamente do repositório (ex: 08.json)
+    async function carregarDoGithub() {
+        const mes = document.getElementById('monthSelect').value;
+        const ficheiro = `${mes}.json`;
+        mostrarStatus(`A tentar carregar ${ficheiro}...`, 'info');
+
+        try {
+            const resposta = await fetch(ficheiro, { cache: "no-store" });
+            if (!resposta.ok) {
+                throw new Error(`Ficheiro ${ficheiro} não encontrado no repositório.`);
             }
+            registos = await resposta.json();
+            renderizarTabela();
+            mostrarStatus(`Ficheiro ${ficheiro} carregado com sucesso!`, 'success');
+        } catch (erro) {
+            registos = [];
+            renderizarTabela();
+            mostrarStatus(`Aviso: ${erro.message} (Pode adicionar novos dados e guardar).`, 'error');
         }
     }
-</script>
-<style>
-    body {
-        background-color: #0b0f19;
-        color: #f3f4f6;
-    }
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-    }
-    ::-webkit-scrollbar-track {
-        background: #0f172a;
-    }
-    ::-webkit-scrollbar-thumb {
-        background: #334155;
-        border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-        background: #475569;
-    }
-</style>
 
+    function renderizarTabela() {
+        const tbody = document.getElementById('tabelaCorpo');
+        tbody.innerHTML = '';
 
-<script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+        if (registos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Nenhum registo encontrado.</td></tr>';
+            document.getElementById('totalBadge').innerText = 'Total: 00:00';
+            return;
+        }
 
-    function App() {
-        const [records, setRecords] = useState([]);
-        const [modalOpen, setModalOpen] = useState(false);
-        const [loading, setLoading] = useState(true);
-        const [loadStatus, setLoadStatus] = useState(null);
-        
-        const fileInputRef = useRef(null);
+        let totalMinutos = 0;
 
-        // Seleção de ano e mês padrão
-        const now = new Date();
-        const defaultYear = now.getFullYear().toString();
-        const defaultMonth = String(now.getMonth() + 1).padStart(2, '0');
+        registos.forEach((item, index) => {
+            // Somar minutos
+            if (item.horas) {
+                const [h, m] = item.horas.split(':').map(Number);
+                totalMinutos += (h || 0) * 60 + (m || 0);
+            }
 
-        const [selectedYear, setSelectedYear] = useState(defaultYear);
-        const [selectedMonth, setSelectedMonth] = useState(defaultMonth);
-
-        const [form, setForm] = useState({
-            dados: new Date().toISOString().split('T')[0],
-            local: '',
-            horas: '07:00',
-            horas_extras: '00:00'
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${item.dados || ''}</strong></td>
+                <td>${item.local || ''}</td>
+                <td>${item.horas || ''}</td>
+                <td style="text-align: center;">
+                    <button class="danger" style="padding: 4px 8px; font-size: 0.8rem;" onclick="eliminarRegisto(${index})">✕</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
         });
 
-        // Tentar carregar automaticamente o ficheiro JSON da raiz (ex: 08.json)
-        const fetchMonthJson = async (year, month) => {
-            setLoading(true);
-            setLoadStatus(null);
-            
-            // Tenta caminhos comuns na raiz do GitHub Pages
-            const filename = `${month}.json`;
-            const yearFolderFilename = `${year}/${month}.json`;
-
-            try {
-                let response = await fetch(filename);
-                if (!response.ok) {
-                    response = await fetch(yearFolderFilename);
-                }
-
-                if (response.ok) {
-                    const data = await response.json();
-                    if (Array.isArray(data)) {
-                        setRecords(data);
-                        setLoadStatus({ type: 'success', msg: `Ficheiro ${filename} carregado automaticamente da raiz!` });
-                    } else {
-                        setRecords([]);
-                        setLoadStatus({ type: 'error', msg: `Formato inválido no ficheiro ${filename}` });
-                    }
-                } else {
-                    setRecords([]);
-                    setLoadStatus({ type: 'info', msg: `Nenhum ficheiro ${filename} encontrado na raiz do GitHub.` });
-                }
-            } catch (err) {
-                setRecords([]);
-                setLoadStatus({ type: 'info', msg: `Servidor sem ficheiro ${filename} prévio.` });
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        useEffect(() => {
-            fetchMonthJson(selectedYear, selectedMonth);
-        }, [selectedYear, selectedMonth]);
-
-        // Auxiliar para converter formato "HH:MM" para minutos
-        const timeToMinutes = (timeStr) => {
-            if (!timeStr) return 0;
-            const [h, m] = timeStr.split(':').map(Number);
-            return (h || 0) * 60 + (m || 0);
-        };
-
-        // Auxiliar para converter minutos em string "HH:MM"
-        const minutesToTime = (totalMin) => {
-            const hours = Math.floor(totalMin / 60);
-            const mins = totalMin % 60;
-            return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
-        };
-
-        // Adicionar novo registo
-        const saveRecord = (e) => {
-            e.preventDefault();
-            if (!form.local || !form.horas) return;
-
-            const updatedRecords = [form, ...records];
-            // Ordenar por data mais recente
-            updatedRecords.sort((a, b) => new Date(b.dados) - new Date(a.dados));
-
-            setRecords(updatedRecords);
-            setForm({
-                dados: `${selectedYear}-${selectedMonth}-${String(now.getDate()).padStart(2, '0')}`,
-                local: '',
-                horas: '07:00',
-                horas_extras: '00:00'
-            });
-            setModalOpen(false);
-        };
-
-        // Eliminar um registo
-        const deleteRecord = (indexToDelete) => {
-            const updated = records.filter((_, idx) => idx !== indexToDelete);
-            setRecords(updated);
-        };
-
-        // Descarregar ficheiro JSON atualizado para depois subir ao GitHub
-        const downloadJsonFile = () => {
-            const jsonString = JSON.stringify(records, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${selectedMonth}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        };
-
-        // Importar manualmente um ficheiro JSON local
-        const handleFileUpload = (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const parsed = JSON.parse(event.target.result);
-                    if (Array.isArray(parsed)) {
-                        setRecords(parsed);
-                        setLoadStatus({ type: 'success', msg: `Ficheiro ${file.name} importado com sucesso!` });
-                    } else {
-                        alert('O ficheiro JSON não contém uma lista válida.');
-                    }
-                } catch (err) {
-                    alert('Erro ao processar o ficheiro JSON.');
-                }
-            };
-            reader.readAsText(file);
-        };
-
-        // Cálculos Totais do Mês
-        const totalMinutesNormal = records.reduce((acc, curr) => acc + timeToMinutes(curr.horas), 0);
-        const totalMinutesExtras = records.reduce((acc, curr) => acc + timeToMinutes(curr.horas_extras), 0);
-
-        return (
-            <div className="flex-1 flex flex-col max-w-5xl w-full mx-auto p-4 md:p-8">
-                
-                <!-- Header -->
-                <header className="flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-900/90 border border-slate-800 rounded-3xl p-6 mb-6 shadow-2xl backdrop-blur-lg gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-gradient-to-tr from-cyan-500 to-blue-600 p-3.5 rounded-2xl text-slate-950 font-black shadow-lg shadow-cyan-500/20">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
-                                Pedro
-                                <span className="text-xs font-semibold bg-cyan-500/10 text-cyan-400 px-3 py-1 rounded-full border border-cyan-500/20 tracking-wide uppercase">
-                                    Registo de Horas
-                                </span>
-                            </h1>
-                            <p className="text-slate-400 text-sm mt-0.5">Gestão simples de deslocações e horas de trabalho</p>
-                        </div>
-                    </div>
-
-                    <!-- Botões de Ação na Header -->
-                    <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
-                        <button 
-                            onClick={() => fileInputRef.current && fileInputRef.current.click()}
-                            className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold px-4 py-2.5 rounded-xl border border-slate-700 transition-all flex items-center gap-2 text-sm cursor-pointer shadow-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                            Abrir JSON
-                        </button>
-                        <input 
-                            type="file" 
-                            ref={fileInputRef} 
-                            onChange={handleFileUpload} 
-                            accept=".json" 
-                            className="hidden" 
-                        />
-
-                        <button 
-                            onClick={() => setModalOpen(true)}
-                            className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 text-sm cursor-pointer shadow-lg shadow-cyan-500/25">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                            Novo Registo
-                        </button>
-                    </div>
-                </header>
-
-                <!-- Feedback Status / Alertas -->
-                {loadStatus && (
-                    <div className={`text-xs px-4 py-3 rounded-2xl mb-6 border flex items-center justify-between ${
-                        loadStatus.type === 'success' 
-                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
-                            : loadStatus.type === 'error' 
-                            ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' 
-                            : 'bg-slate-800/80 border-slate-700 text-slate-300'
-                    }`}>
-                        <span className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-current"></span>
-                            {loadStatus.msg}
-                        </span>
-                        <button onClick={() => setLoadStatus(null)} className="text-slate-400 hover:text-white font-bold ml-4">✕</button>
-                    </div>
-                )}
-
-                <!-- Controls & Summary Bar -->
-                <div className="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 mb-6 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-5 shadow-xl backdrop-blur-md">
-                    
-                    <!-- Seletor de Mês / Ano -->
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center bg-slate-950 border border-slate-800 rounded-2xl p-1.5">
-                            <span className="text-xs text-slate-400 font-medium px-3">Período:</span>
-                            <select 
-                                value={selectedYear} 
-                                onChange={(e) => setSelectedYear(e.target.value)}
-                                className="bg-slate-900 text-white text-sm font-semibold rounded-xl px-3 py-1.5 focus:outline-none border border-slate-800 cursor-pointer">
-                                <option value="2025">2025</option>
-                                <option value="2026">2026</option>
-                                <option value="2027">2027</option>
-                            </select>
-                            <span className="text-slate-600 px-1">/</span>
-                            <select 
-                                value={selectedMonth} 
-                                onChange={(e) => setSelectedMonth(e.target.value)}
-                                className="bg-slate-900 text-cyan-400 text-sm font-bold rounded-xl px-3 py-1.5 focus:outline-none border border-slate-800 cursor-pointer">
-                                <option value="01">01 (Jan)</option>
-                                <option value="02">02 (Fev)</option>
-                                <option value="03">03 (Mar)</option>
-                                <option value="04">04 (Abr)</option>
-                                <option value="05">05 (Mai)</option>
-                                <option value="06">06 (Jun)</option>
-                                <option value="07">07 (Jul)</option>
-                                <option value="08">08 (Ago)</option>
-                                <option value="09">09 (Set)</option>
-                                <option value="10">10 (Out)</option>
-                                <option value="11">11 (Nov)</option>
-                                <option value="12">12 (Dez)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Resumo Totais -->
-                    <div className="flex items-center gap-4">
-                        <div className="bg-slate-950 border border-slate-800 px-4 py-2.5 rounded-2xl flex-1 md:flex-none">
-                            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Horas Normais</span>
-                            <span className="text-xl font-extrabold text-cyan-400 tracking-tight">{minutesToTime(totalMinutesNormal)} h</span>
-                        </div>
-                        <div className="bg-slate-950 border border-slate-800 px-4 py-2.5 rounded-2xl flex-1 md:flex-none">
-                            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Horas Extras</span>
-                            <span className="text-xl font-extrabold text-amber-400 tracking-tight">+{minutesToTime(totalMinutesExtras)} h</span>
-                        </div>
-                        <button 
-                            onClick={downloadJsonFile}
-                            title="Descarregar ficheiro JSON atualizado"
-                            className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold px-4 py-3 rounded-2xl transition-all flex items-center justify-center gap-2 text-xs shadow-lg shadow-emerald-500/15 cursor-pointer">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                            <span className="hidden sm:inline">Guardar</span> {selectedMonth}.json
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Listagem de Registos -->
-                <div className="flex-1 space-y-3">
-                    <div className="flex items-center justify-between px-2 mb-1">
-                        <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                            Registos Encontrados ({records.length})
-                        </h2>
-                        <span className="text-xs text-slate-500">Ficheiro activo: <code className="text-cyan-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">{selectedMonth}.json</code></span>
-                    </div>
-
-                    {loading ? (
-                        <div className="text-center py-20 bg-slate-900/30 border border-slate-800/50 rounded-3xl">
-                            <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-cyan-500 border-t-transparent mb-3"></div>
-                            <p className="text-slate-400 text-sm">A carregar registos...</p>
-                        </div>
-                    ) : records.length === 0 ? (
-                        <div className="text-center py-20 bg-slate-900/30 border border-slate-800/50 rounded-3xl">
-                            <p className="text-slate-400 font-medium">Nenhum registo disponível para o mês {selectedMonth}/{selectedYear}.</p>
-                            <p className="text-xs text-slate-600 mt-1">Clique em "Novo Registo" ou carregue um ficheiro JSON.</p>
-                        </div>
-                    ) : (
-                        records.map((item, index) => (
-                            <div 
-                                key={index} 
-                                className="bg-slate-900/70 border border-slate-800/80 hover:border-slate-700/80 rounded-2xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all duration-200 group">
-                                
-                                <div className="flex items-center gap-4">
-                                    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center min-w-[100px]">
-                                        <span className="text-xs text-slate-400 block font-medium">Data</span>
-                                        <span className="text-sm font-bold text-cyan-300">{item.dados}</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-xs text-slate-500 uppercase tracking-wider block font-semibold">Vila / Local</span>
-                                        <span className="text-lg font-bold text-white capitalize">{item.local || '—'}</span>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-5 w-full md:w-auto justify-between md:justify-end border-t border-slate-800/60 md:border-t-0 pt-3 md:pt-0">
-                                    <div className="flex items-center gap-3">
-                                        <div className="bg-slate-950 px-3.5 py-1.5 rounded-xl border border-slate-800">
-                                            <span className="text-[10px] text-slate-400 block font-medium">Horas</span>
-                                            <span className="text-cyan-400 font-extrabold text-sm">{item.horas} h</span>
-                                        </div>
-                                        {item.horas_extras && item.horas_extras !== "00:00" && (
-                                            <div className="bg-slate-950 px-3.5 py-1.5 rounded-xl border border-slate-800">
-                                                <span className="text-[10px] text-slate-400 block font-medium">Extras</span>
-                                                <span className="text-amber-400 font-extrabold text-sm">+{item.horas_extras} h</span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <button 
-                                        onClick={() => deleteRecord(index)}
-                                        className="text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 p-2 rounded-xl transition-all cursor-pointer"
-                                        title="Eliminar registo">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                    </button>
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
-
-                <!-- Modal para Adicionar Entradas -->
-                {modalOpen && (
-                    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-                        <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative animate-in fade-in zoom-in duration-150">
-                            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                                <span>Adicionar Horas</span>
-                            </h3>
-
-                            <form onSubmit={saveRecord} className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">Data (dados)</label>
-                                    <input 
-                                        type="date" 
-                                        required
-                                        value={form.dados} 
-                                        onChange={e => setForm({...form, dados: e.target.value})}
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" 
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">Vila / Local (local)</label>
-                                    <input 
-                                        type="text" 
-                                        required
-                                        placeholder="Ex: Quimper, Yffiniac..." 
-                                        value={form.local} 
-                                        onChange={e => setForm({...form, local: e.target.value})}
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" 
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-semibold text-slate-300 mb-1.5">Horas (horas)</label>
-                                        <input 
-                                            type="time" 
-                                            required
-                                            value={form.horas} 
-                                            onChange={e => setForm({...form, horas: e.target.value})}
-                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" 
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-semibold text-slate-300 mb-1.5">Horas Extras</label>
-                                        <input 
-                                            type="time" 
-                                            value={form.horas_extras} 
-                                            onChange={e => setForm({...form, horas_extras: e.target.value})}
-                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-cyan-500" 
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="flex justify-end gap-3 pt-3">
-                                    <button 
-                                        type="button" 
-                                        onClick={() => setModalOpen(false)}
-                                        className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-sm font-semibold hover:bg-slate-700 cursor-pointer">
-                                        Cancelar
-                                    </button>
-                                    <button 
-                                        type="submit" 
-                                        className="px-5 py-2.5 rounded-xl bg-cyan-500 text-slate-950 text-sm font-bold hover:bg-cyan-400 cursor-pointer shadow-lg shadow-cyan-500/20">
-                                        Adicionar Registo
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
+        // Atualizar Total
+        const horasTotais = Math.floor(totalMinutos / 60);
+        const minsTotais = totalMinutos % 60;
+        const totalFormatado = `${String(horasTotais).padStart(2, '0')}:${String(minsTotais).padStart(2, '0')}`;
+        document.getElementById('totalBadge').innerText = `Total: ${totalFormatado}h`;
     }
 
-    const container = document.getElementById('root');
-    const root = ReactDOM.createRoot(container);
-    root.render(<App />);
+    function adicionarRegisto(e) {
+        e.preventDefault();
+        const dados = document.getElementById('inputData').value;
+        const local = document.getElementById('inputLocal').value;
+        const horas = document.getElementById('inputHoras').value;
+
+        registos.push({ dados, local, horas });
+        renderizarTabela();
+
+        // Limpar apenas local e horas
+        document.getElementById('inputLocal').value = '';
+        document.getElementById('inputHoras').value = '';
+        mostrarStatus('Registo adicionado à lista. Lembre-se de clicar em "Guardar Ficheiro JSON".', 'success');
+    }
+
+    function eliminarRegisto(index) {
+        registos.splice(index, 1);
+        renderizarTabela();
+    }
+
+    function guardarJson() {
+        const mes = document.getElementById('monthSelect').value;
+        const nomeFicheiro = `${mes}.json`;
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(registos, null, 2));
+        
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", nomeFicheiro);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+
+        mostrarStatus(`Ficheiro ${nomeFicheiro} descarregado! Suba-o para a raiz do seu GitHub para atualizar online.`, 'success');
+    }
+
+    function carregarFicheiroManual(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                registos = JSON.parse(e.target.result);
+                renderizarTabela();
+                mostrarStatus(`Ficheiro ${file.name} carregado com sucesso!`, 'success');
+            } catch (err) {
+                mostrarStatus('Erro ao ler o ficheiro JSON. Verifique o formato.', 'error');
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function mostrarStatus(mensagem, tipo) {
+        const el = document.getElementById('status');
+        el.innerText = mensagem;
+        el.className = `status-msg ${tipo}`;
+        setTimeout(() => {
+            if (el.innerText === mensagem) el.style.display = 'none';
+        }, 5000);
+    }
+
+    // Carregar automaticamente ao abrir a página
+    window.onload = carregarDoGithub;
 </script>
+
+</body>
+</html>
