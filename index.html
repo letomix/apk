@@ -441,7 +441,12 @@
 
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    doc.text(`SUIVI DES HEURES ET DÉPLACEMENTS - ${nomeMesText.toUpperCase()} ${anoText}`, 14, 46);
+// Extrai apenas o nome do mês descartando o número inicial
+    const apenasNomeMes = selectMes.options[selectMes.selectedIndex].text.split('-')[1].trim();
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(`SUIVI DES HEURES ET DÉPLACEMENTS - ${apenasNomeMes.toUpperCase()} ${anoText}`, 14, 46);
 
     const rows = registosMes.map(item => {
       const ext = extrairValoresObjeto(item);
