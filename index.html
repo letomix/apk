@@ -76,8 +76,8 @@
     button {
       border: none;
       border-radius: 8px;
-      padding: 10px 16px;
-      font-size: 0.95rem;
+      padding: 10px 12px;
+      font-size: 0.9rem;
       font-weight: 600;
       cursor: pointer;
       display: inline-flex;
@@ -215,11 +215,12 @@
     </table>
   </div>
 
-  <!-- Botões de Ação -->
+  <!-- Grupo de Botões Inferiores -->
   <div class="row" style="margin-bottom: 10px;">
-    <button type="button" class="btn-save" id="btnSaveGithub" disabled>☁️ Enregistrer</button>
+    <button type="button" class="btn-save" id="btnSaveGithub" disabled>☁️ Enregistrer sur GitHub</button>
     <button type="button" class="btn-pdf" id="btnExportPdf" disabled>📄 Exporter PDF</button>
   </div>
+  
   <div class="row">
     <button type="button" class="btn-token" id="btnTokenGithub">⚙️ Token GitHub</button>
   </div>
@@ -372,7 +373,7 @@
     renderizarTabela();
   }
 
-  // --- GERAR E EXPORTAR PDF ---
+  // --- GERAR E EXPORTAR PDF (COM MAPEAMENTO DE CHAVES CORRIGIDO) ---
   btnExportPdf.addEventListener('click', () => {
     if (registosMes.length === 0) return;
 
@@ -402,10 +403,10 @@
     doc.setFont("helvetica", "bold");
     doc.text(`SUIVI DES HEURES ET DÉPLACEMENTS - ${nomeMesText.toUpperCase()} ${anoText}`, 14, 46);
 
-    // Prepara linhas da tabela
+    // Prepara as linhas mapeando todas as opções possíveis de chaves no JSON
     const rows = registosMes.map(item => [
       item.date || item.Date || item.data || '-',
-      item.lieu || item.Lieu || item.client || '-',
+      item.lieu || item.Lieu || item.client || item.Client || '-',
       item.heures || item.Heures || item.horas || '00:00'
     ]);
 
@@ -430,7 +431,7 @@
     doc.setFont("helvetica", "bold");
     doc.text(`Total des Heures: ${totalHeuresDisplay.textContent}`, 196, finalY, { align: 'right' });
 
-    // Transferir ficheiro para o dispositivo
+    // Download do ficheiro PDF
     doc.save(`Heures_${anoText}_${selectMes.value}.pdf`);
   });
 
@@ -458,7 +459,14 @@
         sha = fileData.sha;
       }
 
-      const jsonContent = JSON.stringify(registosMes, null, 2);
+      // Padroniza o salvamento em minúsculas
+      const dadosPadronizados = registosMes.map(item => ({
+        date: item.date || item.Date || item.data || '',
+        lieu: item.lieu || item.Lieu || item.client || item.Client || '',
+        heures: item.heures || item.Heures || item.horas || ''
+      }));
+
+      const jsonContent = JSON.stringify(dadosPadronizados, null, 2);
       const contentEncoded = btoa(unescape(encodeURIComponent(jsonContent)));
 
       const putRes = await fetch(apiUrl, {
